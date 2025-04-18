@@ -9,6 +9,16 @@ const Discord = require('discord.js');
 
 //create a Discord client with discord.js
 const client = new Discord.Client({
+	intents: [
+		Discord.GatewayIntentBits.MessageContent,
+		Discord.GatewayIntentBits.GuildMessages,
+		Discord.GatewayIntentBits.GuildMessageReactions,
+		Discord.GatewayIntentBits.DirectMessages,
+		Discord.GatewayIntentBits.DirectMessageReactions,
+		Discord.GatewayIntentBits.Guilds,
+		Discord.GatewayIntentBits.GuildMembers,
+		Discord.GatewayIntentBits.GuildVoiceStates,
+	],
 	partials: [
 		Discord.Partials.Channel,
 	]
