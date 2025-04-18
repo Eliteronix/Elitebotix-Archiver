@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Eliteronix/Elitebotix-Archiver/issues"
   },
-  "homepage": "https://github.com/Eliteronix/Elitebotix-Archiver#readme"
+  "homepage": "https://github.com/Eliteronix/Elitebotix-Archiver#readme",
+  "dependencies": {
+    "discord.js": "^14.18.0"
+  }
 }
