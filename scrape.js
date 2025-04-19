@@ -1,5 +1,5 @@
 module.exports = {
-	async execute() {
-
+	async scrape() {
+		console.log('Scraping for new matches...');
 	},
 };

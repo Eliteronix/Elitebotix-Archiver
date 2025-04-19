@@ -10,9 +10,9 @@ scrapeForNewMatches();
 
 async function scrapeForNewMatches() {
 	try {
-		await scrape.execute();
+		await scrape();
 	} catch (e) {
-		console.error('index.js | scrape' + e);
+		console.error('index.js | scrape', e);
 	}
 
 	setTimeout(() => {
