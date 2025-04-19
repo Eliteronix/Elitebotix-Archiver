@@ -7,6 +7,7 @@ module.exports = {
 	watch: true, // Watch for file changes
 	ignore_watch: [
 		"lastImport.json",
+		".git"
 	],
 	env: {
 		PATH: `${process.env.HOME}/.bun/bin:${process.env.PATH}`, // Add "~/.bun/bin/bun" to PATH

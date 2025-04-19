@@ -3,7 +3,6 @@ const { Op } = require('sequelize');
 
 module.exports = {
 	async scrape() {
-		console.log('Scraping for new matches...');
 		const fs = require('fs');
 
 		//Check if the lastImport.json file exists
@@ -35,5 +34,9 @@ module.exports = {
 			//Create the lastImport.json file
 			fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
 		}
+
+		//Read the lastImport.json file
+		let lastImport = JSON.parse(fs.readFileSync(`./lastImport.json`, 'utf-8'));
+		console.log('Last import:', lastImport.matchId);
 	},
 };
