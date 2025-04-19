@@ -92,7 +92,7 @@ module.exports = {
 						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'importMatch',
-							additions: `${matchID};1;${Date.parse(match.raw_start)};${match.name.toLowerCase()}`,
+							additions: `${lastImport.matchId};1;${Date.parse(match.raw_start)};${match.name.toLowerCase()}`,
 							priority: 1,
 							date: date
 						});
