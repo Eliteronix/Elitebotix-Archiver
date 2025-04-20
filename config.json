@@ -1,12 +1,21 @@
 {
+	"logVerificationProcess": false,
+	"verificationUser": {
+		"username": "Elitebotix",
+		"discriminator": 2307,
+		"clientId": 981205694340546571,
+		"osuUserId": 31050083
+	},
 	"matchmaking": [
 		{
 			"acronym": "o!mm",
-			"referee": 16173747
+			"referee": 16173747,
+			"refereeName": "MaidBot"
 		},
 		{
 			"acronym": "ROMAI",
-			"referee": 13448067
+			"referee": 13448067,
+			"refereeName": "DarkerSniper"
 		}
 	]
 }
