@@ -69,7 +69,7 @@ module.exports = {
 						let hoursBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60 / 60) % 24;
 						let daysBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60 / 60 / 24);
 
-						let task = await DBElitebotixProcessQueue.create({
+						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'messageChannel',
 							additions: `${process.env.IMPORTMATCHLOG};<https://osu.ppy.sh/mp/${lastImport.matchId}> ${daysBehindToday}d ${hoursBehindToday}h ${minutesBehindToday}m \`${match.name}\` done`,
