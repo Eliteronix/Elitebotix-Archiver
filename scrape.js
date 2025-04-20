@@ -23,12 +23,14 @@ module.exports = {
 
 			let lastImport = {
 				matchId: 0,
+				lastMatchFound: 0,
 			};
 
 			//If no recent import was found, set it to 0
 			if (recentImport) {
 				lastImport = {
 					matchId: recentImport.matchId,
+					lastMatchFound: recentImport.matchId,
 				};
 			}
 
@@ -56,6 +58,7 @@ module.exports = {
 
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
+				lastImport.lastMatchFound = lastImport.matchId;
 				let sixHoursAgo = new Date();
 				sixHoursAgo.setUTCHours(sixHoursAgo.getUTCHours() - 6);
 
@@ -116,8 +119,14 @@ module.exports = {
 			})
 			.catch(async (err) => {
 				if (err.message === 'Not found') {
-					//Go next if match not found
-					lastImport.matchId = lastImport.matchId + 1;
+					//Fallback in case we got ahead of the matches
+					if (lastImport.lastMatchFound < lastImport.matchId - 100) {
+						lastImport.matchId = lastImport.lastMatchFound;
+						console.log('Match not found for 100 matches in a row, going back to last match found:', lastImport.matchId);
+					} else {
+						//Go next if match not found
+						lastImport.matchId = lastImport.matchId + 1;
+					}
 
 					//Create the lastImport.json file
 					fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
