@@ -5,8 +5,6 @@ const osu = require('node-osu');
 
 module.exports = {
 	async verifyMatches() {
-		console.log('Verifying matches...');
-
 		// Check for matchmaking first
 		for (let i = 0; i < matchmaking.length; i++) {
 			let verifyMatch = await DBElitebotixOsuMultiMatches.findOne({
