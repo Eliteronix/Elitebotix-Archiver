@@ -9,6 +9,7 @@ module.exports = {
 
 		// Check for matchmaking first
 		for (let i = 0; i < matchmaking.length; i++) {
+			console.log(matchmaking[i].refereeName);
 			let verifyMatch = await DBElitebotixOsuMultiMatches.findOne({
 				attributes: ['matchId'],
 				where: {
@@ -102,7 +103,7 @@ module.exports = {
 											await DBElitebotixProcessQueue.create({
 												guildId: 'None',
 												task: 'messageChannel',
-												additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match created by ${matchmaking[i.refereeName]}\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
+												additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match created by ${matchmaking[i].refereeName}\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
 												priority: 1,
 												date: new Date()
 											});
