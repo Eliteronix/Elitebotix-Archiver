@@ -83,11 +83,7 @@ module.exports = {
 			//Return after 5 seconds for dev
 			if (process.env.SERVER === 'Dev') {
 				await new Promise(resolve => setTimeout(resolve, 5 * 1000));
-				return;
 			}
-
-			//Return after 1 minutes for live
-			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
 			return;
 		}
 
