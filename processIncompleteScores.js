@@ -17,6 +17,8 @@ module.exports = {
 		});
 
 		if (incompleteMatchScore) {
+			let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(incompleteMatchScore.matchId) % process.env.OSUTOKENSV1.split('-').length];
+
 			const osuApi = new osu.Api(APItoken, {
 				// baseUrl: sets the base api url (default: https://osu.ppy.sh/api)
 				notFoundAsError: true, // Throw an error on not found instead of returning nothing. (default: true)
