@@ -1,5 +1,7 @@
-const { DBElitebotixOsuMultiGames } = require("./dbObjects");
+const { DBElitebotixOsuMultiGames, DBElitebotixProcessQueue, DBElitebotixOsuMultiGameScores } = require("./dbObjects");
 const osu = require('node-osu');
+const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
+const { verifyMatches } = require('./verifyMatches');
 
 module.exports = {
 	async processIncompleteScores() {
@@ -14,8 +16,6 @@ module.exports = {
 			]
 		});
 
-		console.log('incompleteMatchScore', incompleteMatchScore);
-
 		if (incompleteMatchScore) {
 			const osuApi = new osu.Api(APItoken, {
 				// baseUrl: sets the base api url (default: https://osu.ppy.sh/api)
@@ -26,34 +26,28 @@ module.exports = {
 
 			await osuApi.getMatch({ mp: incompleteMatchScore.matchId })
 				.then(async (match) => {
-					if (logBroadcastEval) {
-						// eslint-disable-next-line no-console
-						console.log('Broadcasting processQueueTasks/saveMultiMatches.js incompleteMatchScore to shards...');
-					}
-
-					client.shard.broadcastEval(async (c, { channelId, message }) => {
-						let channel = await c.channels.cache.get(channelId);
-						if (channel) {
-							await channel.send(message);
-						}
-					}, { context: { channelId: channelId, message: `<https://osu.ppy.sh/mp/${match.id}> | ${incompleteMatchScore.updatedAt.getUTCHours().toString().padStart(2, 0)}:${incompleteMatchScore.updatedAt.getUTCMinutes().toString().padStart(2, 0)} ${incompleteMatchScore.updatedAt.getUTCDate().toString().padStart(2, 0)}.${(incompleteMatchScore.updatedAt.getUTCMonth() + 1).toString().padStart(2, 0)}.${incompleteMatchScore.updatedAt.getUTCFullYear()} | \`${match.name}\`` } });
+					await DBElitebotixProcessQueue.create({
+						guildId: 'None',
+						task: 'messageChannel',
+						additions: `${process.env.REIMPORTMATCHLOG};<https://osu.ppy.sh/mp/${match.id}> | ${incompleteMatchScore.updatedAt.getUTCHours().toString().padStart(2, 0)}:${incompleteMatchScore.updatedAt.getUTCMinutes().toString().padStart(2, 0)} ${incompleteMatchScore.updatedAt.getUTCDate().toString().padStart(2, 0)}.${(incompleteMatchScore.updatedAt.getUTCMonth() + 1).toString().padStart(2, 0)}.${incompleteMatchScore.updatedAt.getUTCFullYear()} | \`${match.name}\``,
+						priority: 1,
+						date: new Date()
+					});
 
 					incompleteMatchScore.changed('updatedAt', true);
 					await incompleteMatchScore.save();
 
-					await saveOsuMultiScores(match, client);
+					await saveOsuMultiScores(match);
 				})
 				.catch(async (err) => {
-					logDatabaseQueries(2, 'saveOsuMultiScores.js DBOsuMultiGames incomplete scores backup');
-					let incompleteGames = await DBOsuMultiGames.findAll({
+					let incompleteGames = await DBElitebotixOsuMultiGames.findAll({
 						attributes: ['id', 'warmup', 'updatedAt'],
 						where: {
 							matchId: incompleteMatchScore.matchId
 						}
 					});
 
-					logDatabaseQueries(2, 'saveOsuMultiScores.js DBOsuMultiGameScores incomplete scores backup');
-					let incompleteScores = await DBOsuMultiGameScores.findAll({
+					let incompleteScores = await DBElitebotixOsuMultiGameScores.findAll({
 						attributes: ['id', 'maxCombo', 'pp', 'updatedAt'],
 						where: {
 							matchId: incompleteMatchScore.matchId
@@ -83,10 +77,19 @@ module.exports = {
 						}
 					}
 				});
+
+			//Return after 5 seconds for dev
+			if (process.env.SERVER === 'Dev') {
+				await new Promise(resolve => setTimeout(resolve, 5 * 1000));
+				return;
+			}
+
+			//Return after 1 minutes for live
+			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+			return;
 		}
 
-		//Return after 1 minutes
-		await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
-		return;
+		//Verify matches instead if no incomplete matches
+		return await verifyMatches();
 	}
 };
