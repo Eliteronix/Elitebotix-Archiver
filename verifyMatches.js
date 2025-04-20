@@ -9,7 +9,6 @@ module.exports = {
 
 		// Check for matchmaking first
 		for (let i = 0; i < matchmaking.length; i++) {
-			console.log(matchmaking[i].refereeName);
 			let verifyMatch = await DBElitebotixOsuMultiMatches.findOne({
 				attributes: ['matchId'],
 				where: {
