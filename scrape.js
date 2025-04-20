@@ -115,7 +115,6 @@ module.exports = {
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
-				console.error(err, `API Key Index ${parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length} going same saveMultiMatches.js https://osu.ppy.sh/community/matches/${parseInt(lastImport.matchId)}`);
 				if (err.message === 'Not found') {
 					//Go next if match not found
 					lastImport.matchId = lastImport.matchId + 1;
