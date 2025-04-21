@@ -978,7 +978,6 @@ module.exports = {
 						console.error(e);
 					}
 					// Go same if error
-					//Increase seconds to wait
 					return true;
 				}
 			})
