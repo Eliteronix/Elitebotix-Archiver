@@ -428,6 +428,15 @@ module.exports = {
 			return;
 		}
 
+		let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(matchToVerify.matchId) % process.env.OSUTOKENSV1.split('-').length];
+
+		const osuApi = new osu.Api(APItoken, {
+			// baseUrl: sets the base api url (default: https://osu.ppy.sh/api)
+			notFoundAsError: true, // Throw an error on not found instead of returning nothing. (default: true)
+			completeScores: false, // When fetching scores also fetch the beatmap they are for (Allows getting accuracy) (default: false)
+			parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
+		});
+
 		await osuApi.getMatch({ mp: matchToVerify.matchId })
 			.then(async (match) => {
 				try {
