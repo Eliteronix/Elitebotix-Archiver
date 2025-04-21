@@ -256,7 +256,6 @@ module.exports = {
 		});
 
 		for (let i = 0; i < matchesToVerify.length; i++) {
-			console.log(matchesToVerify[i].matchId, matchesToVerify[i].matchName);
 			if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchesToVerify[i].matchId}.txt`)) {
 				matchesToVerify.splice(i, 1);
 				i--;
