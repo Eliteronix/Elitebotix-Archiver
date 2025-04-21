@@ -236,16 +236,22 @@ module.exports = {
 		if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`)) {
 			fs.mkdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
 		}
+		console.log('Checking for ETX matches to verify...');
 		let matchLogFiles = fs.readdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
 		let matchLogsToVerify = [];
 
+		console.log(`Found ${matchLogFiles.length} match logs`);
+
 		for (let i = 0; i < matchLogFiles.length; i++) {
+			console.log(`Checking match log ${i + 1}/${matchLogFiles.length}...`);
 			let matchLog = fs.readFileSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchLogFiles[i]}`, 'utf8');
 
 			if (matchLog.includes('[Eliteronix]: Looking for a map...') || matchLog.includes('[Elitebotix]: Looking for a map...')) {
 				matchLogsToVerify.push(matchLogFiles[i].replace('.txt', ''));
 			}
 		}
+
+		console.log(`Found ${matchLogsToVerify.length} match logs to verify`);
 
 		let matchesToVerify = await DBElitebotixOsuMultiMatches.findAll({
 			attributes: ['matchId'],
