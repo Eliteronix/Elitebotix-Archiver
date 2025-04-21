@@ -255,8 +255,12 @@ module.exports = {
 			group: ['matchId', 'matchName'],
 		});
 
+		let matchesToNotVerify = [];
+
 		for (let i = 0; i < matchesToVerify.length; i++) {
 			if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchesToVerify[i].matchId}.txt`)) {
+				matchesToNotVerify.push(matchesToVerify[i].matchId);
+
 				matchesToVerify.splice(i, 1);
 				i--;
 				continue;
@@ -265,6 +269,8 @@ module.exports = {
 			let matchLog = fs.readFileSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchesToVerify[i].matchId}.txt`, 'utf8');
 
 			if (!(matchLog.includes('[Eliteronix]: Looking for a map...') || matchLog.includes('[Elitebotix]: Looking for a map...'))) {
+				matchesToNotVerify.push(matchesToVerify[i].matchId);
+
 				matchesToVerify.splice(i, 1);
 				i--;
 				continue;
@@ -319,6 +325,60 @@ module.exports = {
 					guildId: 'None',
 					task: 'messageChannel',
 					additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Elitebotix Duel Match\`\`\`https://osu.ppy.sh/mp/${matchesToVerify[i]} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
+					priority: 1,
+					date: new Date()
+				});
+			}
+
+			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+			return;
+		}
+
+		if (matchesToNotVerify.length) {
+			// If there is a match to unverify
+			await DBElitebotixOsuMultiMatches.update({
+				tourneyMatch: false,
+				verifiedAt: new Date(),
+				verifiedBy: verificationUser.osuUserId, // Elitebotix
+				verificationComment: 'Fake Elitebotix Duel Match - No match log found',
+			}, {
+				where: {
+					matchId: {
+						[Op.in]: matchesToNotVerify,
+					},
+				},
+			});
+
+			await DBElitebotixOsuMultiGames.update({
+				tourneyMatch: false,
+			}, {
+				where: {
+					matchId: {
+						[Op.in]: matchesToNotVerify,
+					},
+				},
+			});
+
+			await DBElitebotixOsuMultiGameScores.update({
+				tourneyMatch: false,
+			}, {
+				where: {
+					matchId: {
+						[Op.in]: matchesToNotVerify,
+					},
+				},
+			});
+
+			for (let i = 0; i < matchesToNotVerify.length; i++) {
+				if (logVerificationProcess) {
+					// eslint-disable-next-line no-console
+					console.log(`Match ${matchesToNotVerify[i]} unverified - Fake Elitebotix Duel Match - No match log found`);
+				}
+
+				await DBElitebotixProcessQueue.create({
+					guildId: 'None',
+					task: 'messageChannel',
+					additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n- Valid: False\nComment: Fake Elitebotix Duel Match - No match log found\`\`\`https://osu.ppy.sh/mp/${matchesToNotVerify[i]} was unverified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
 					priority: 1,
 					date: new Date()
 				});
