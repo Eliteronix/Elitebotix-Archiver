@@ -1001,7 +1001,7 @@ module.exports = {
 					}
 				} else {
 					// Go same if error
-					//Increase seconds to wait
+					console.error(err);
 					return true;
 				}
 			});
