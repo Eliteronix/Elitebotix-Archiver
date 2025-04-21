@@ -245,6 +245,9 @@ module.exports = {
 			attributes: ['matchId'],
 			where: {
 				verifiedAt: null,
+				matchName: {
+					[Op.startsWith]: 'ETX',
+				},
 				matchEndDate: {
 					[Op.not]: null,
 				},
