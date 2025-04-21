@@ -244,6 +244,7 @@ module.exports = {
 		let matchesToVerify = await DBElitebotixOsuMultiMatches.findAll({
 			attributes: ['matchId'],
 			where: {
+				tourneyMatch: true,
 				verifiedAt: null,
 				matchName: {
 					[Op.startsWith]: 'ETX',
