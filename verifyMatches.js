@@ -236,10 +236,6 @@ module.exports = {
 			fs.mkdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
 		}
 
-		let matchLogFiles = fs.readdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
-
-		console.log(`Found ${matchLogFiles.length} match logs`);
-
 		let matchesToVerify = await DBElitebotixOsuMultiMatches.findAll({
 			attributes: ['matchId', 'matchName'],
 			where: {
