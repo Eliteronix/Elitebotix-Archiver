@@ -3,38 +3,18 @@ const { logDatabaseQueries, awaitWebRequestPermission, logOsuAPICalls, sendMessa
 const { Op } = require('sequelize');
 
 async function verifyAnyMatch(osuApi, client, logVerificationProcess) {
-	logDatabaseQueries(2, 'processQueueTasks/saveMultiMatches.js DBOsuMultiMatches find match to verify');
-	let matchToVerify = await DBOsuMultiMatches.findOne({
+	logDatabaseQueries(2, 'processQueueTasks/saveMultiMatches.js DBOsuMultiMatches find match to verify referee backup');
+	matchToVerify = await DBOsuMultiMatches.findOne({
 		attributes: ['matchId', 'matchName', 'matchStartDate'],
 		where: {
 			tourneyMatch: true,
 			verifiedBy: null,
-			matchEndDate: {
-				[Op.not]: null,
-			},
-			matchId: {
-				[Op.in]: client.knownSuspiciousMatches,
-			}
+			referee: null,
 		},
 		order: [
 			['matchId', 'ASC']
 		]
 	});
-
-	if (!matchToVerify) {
-		logDatabaseQueries(2, 'processQueueTasks/saveMultiMatches.js DBOsuMultiMatches find match to verify referee backup');
-		matchToVerify = await DBOsuMultiMatches.findOne({
-			attributes: ['matchId', 'matchName', 'matchStartDate'],
-			where: {
-				tourneyMatch: true,
-				verifiedBy: null,
-				referee: null,
-			},
-			order: [
-				['matchId', 'ASC']
-			]
-		});
-	}
 
 	if (!matchToVerify) {
 		logDatabaseQueries(2, 'processQueueTasks/saveMultiMatches.js DBOsuMultiMatches find match to verify backup');
