@@ -230,13 +230,12 @@ module.exports = {
 
 
 
-		console.log('No more matchmaking matches to verify');
 		// Verify ETX Matches if no matchmaking matches are found
 		// Get all matchLogs that contain "Looking for a map..." and are not verified
 		if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`)) {
 			fs.mkdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
 		}
-		console.log('Checking for ETX matches to verify...');
+
 		let matchLogFiles = fs.readdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
 
 		console.log(`Found ${matchLogFiles.length} match logs`);
@@ -257,9 +256,7 @@ module.exports = {
 		});
 
 		for (let i = 0; i < matchesToVerify.length; i++) {
-			console.log(`Checking match log ${i + 1}/${matchesToVerify.length}...`);
 			if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchesToVerify[i].matchId}.txt`)) {
-				console.log(`Match log ${matchesToVerify[i].matchId}.txt not found`);
 				matchesToVerify.splice(i, 1);
 				i--;
 				continue;
@@ -268,7 +265,6 @@ module.exports = {
 			let matchLog = fs.readFileSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchesToVerify[i].matchId}.txt`, 'utf8');
 
 			if (!(matchLog.includes('[Eliteronix]: Looking for a map...') || matchLog.includes('[Elitebotix]: Looking for a map...'))) {
-				console.log(`Match log ${matchesToVerify[i].matchId}.txt does not contain "Looking for a map..."`);
 				matchesToVerify.splice(i, 1);
 				i--;
 				continue;
@@ -276,8 +272,6 @@ module.exports = {
 		}
 
 		matchesToVerify = matchesToVerify.map(match => match.matchId);
-
-		console.log(`Found ${matchesToVerify.length} matches to verify`);
 
 		if (matchesToVerify.length) {
 			// If there is a match to verify
