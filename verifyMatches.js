@@ -264,7 +264,7 @@ module.exports = {
 
 			let matchLog = fs.readFileSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchesToVerify[i].matchId}.txt`, 'utf8');
 
-			if (!(matchLog.includes('[Eliteronix]: Looking for a map...') || matchLog.includes('[Elitebotix]: Looking for a map...'))) {
+			if (!(matchLog.includes('[Eliteronix]: Looking for a map...') || matchLog.includes('[Elitebotix]: Looking for a map...') || matchLog.length === 0)) {
 				matchesToNotVerify.push(matchesToVerify[i].matchId);
 
 				matchesToVerify.splice(i, 1);
