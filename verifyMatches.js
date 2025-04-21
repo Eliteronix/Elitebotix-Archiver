@@ -508,7 +508,7 @@ module.exports = {
 
 									if (scores.length) {
 										//Match creator played a round - Not determined if valid
-										await DBOsuMultiMatches.update({
+										await DBElitebotixOsuMultiMatches.update({
 											verifiedBy: verificationUser.osuUserId, // Elitebotix
 											verificationComment: 'Match creator played a round - Not determined if valid',
 											referee: json.events[0].user_id,
