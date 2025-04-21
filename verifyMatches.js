@@ -2,6 +2,7 @@ const { DBElitebotixOsuMultiMatches, DBElitebotixOsuMultiGames, DBElitebotixOsuM
 const { matchmaking, logVerificationProcess, verificationUser } = require('./config.json');
 const { Op } = require('sequelize');
 const osu = require('node-osu');
+const fs = require('fs');
 
 module.exports = {
 	async verifyMatches() {
@@ -225,7 +226,102 @@ module.exports = {
 			return;
 		}
 
-		console.log('No more matchmaking matches to verify');
+
+
+
+
+		// Verify ETX Matches if no matchmaking matches are found
+		// Get all matchLogs that contain "Looking for a map..." and are not verified
+		if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`)) {
+			fs.mkdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
+		}
+		let matchLogFiles = fs.readdirSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`);
+		let matchLogsToVerify = [];
+
+		for (let i = 0; i < matchLogFiles.length; i++) {
+			let matchLog = fs.readFileSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs/${matchLogFiles[i]}`, 'utf8');
+
+			if (matchLog.includes('[Eliteronix]: Looking for a map...') || matchLog.includes('[Elitebotix]: Looking for a map...')) {
+				matchLogsToVerify.push(matchLogFiles[i].replace('.txt', ''));
+			}
+		}
+
+		let matchesToVerify = await DBElitebotixOsuMultiMatches.findAll({
+			attributes: ['matchId'],
+			where: {
+				verifiedAt: null,
+				matchId: {
+					[Op.in]: matchLogsToVerify,
+				},
+				matchEndDate: {
+					[Op.not]: null,
+				},
+			},
+			group: ['matchId'],
+		});
+
+		matchesToVerify = matchesToVerify.map(match => match.matchId);
+
+		if (matchesToVerify.length) {
+			// If there is a match to verify
+			await DBElitebotixOsuMultiMatches.update({
+				tourneyMatch: true,
+				verifiedAt: new Date(),
+				verifiedBy: verificationUser.osuUserId, // Elitebotix
+				verificationComment: 'Elitebotix Duel Match',
+				referee: 31050083, // Elitebotix
+			}, {
+				where: {
+					matchId: {
+						[Op.in]: matchesToVerify,
+					},
+				},
+			});
+
+			await DBElitebotixOsuMultiGames.update({
+				tourneyMatch: true,
+			}, {
+				where: {
+					matchId: {
+						[Op.in]: matchesToVerify,
+					},
+				},
+			});
+
+			await DBElitebotixOsuMultiGameScores.update({
+				tourneyMatch: true,
+			}, {
+				where: {
+					matchId: {
+						[Op.in]: matchesToVerify,
+					},
+				},
+			});
+
+			for (let i = 0; i < matchesToVerify.length; i++) {
+				if (logVerificationProcess) {
+					// eslint-disable-next-line no-console
+					console.log(`Match ${matchesToVerify[i]} verified - Elitebotix Duel Match`);
+				}
+
+				await DBElitebotixProcessQueue.create({
+					guildId: 'None',
+					task: 'messageChannel',
+					additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Elitebotix Duel Match\`\`\`https://osu.ppy.sh/mp/${matchesToVerify[i]} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
+					priority: 1,
+					date: new Date()
+				});
+			}
+
+			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+			return;
+		}
+
+
+
+
+
+		console.log('No more ETX matches to verify');
 		await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
 		return;
 	}
