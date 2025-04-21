@@ -230,6 +230,7 @@ module.exports = {
 
 
 
+		console.log('No more matchmaking matches to verify');
 		// Verify ETX Matches if no matchmaking matches are found
 		// Get all matchLogs that contain "Looking for a map..." and are not verified
 		if (!fs.existsSync(`${process.env.ELITEBOTIXBANCHOROOTPATH}/matchLogs`)) {
@@ -261,6 +262,8 @@ module.exports = {
 		});
 
 		matchesToVerify = matchesToVerify.map(match => match.matchId);
+
+		console.log(`Found ${matchesToVerify.length} matches to verify`);
 
 		if (matchesToVerify.length) {
 			// If there is a match to verify
