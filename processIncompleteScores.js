@@ -1,4 +1,4 @@
-const { DBElitebotixOsuMultiGames, DBElitebotixProcessQueue, DBElitebotixOsuMultiGameScores } = require("./dbObjects");
+const { DBElitebotixOsuMultiGames, DBElitebotixProcessQueue, DBElitebotixOsuMultiGameScores } = require('./dbObjects');
 const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
 const { verifyMatches } = require('./verifyMatches');

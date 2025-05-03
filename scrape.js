@@ -9,7 +9,7 @@ module.exports = {
 		const fs = require('fs');
 
 		//Check if the lastImport.json file exists
-		if (!fs.existsSync(`./lastImport.json`)) {
+		if (!fs.existsSync('./lastImport.json')) {
 			//Get the match that was most recently imported thats older than 24 hours
 			let recentImport = await DBElitebotixOsuMultiMatches.findOne({
 				attributes: ['matchId'],
@@ -34,10 +34,11 @@ module.exports = {
 				};
 			}
 
+			// eslint-disable-next-line no-console
 			console.log('No lastImport.json file found. Setting lastImport to:', lastImport.matchId);
 
 			//Create the lastImport.json file
-			fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
+			fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 		}
 
 		if (process.env.SERVER === 'Dev') {
@@ -45,7 +46,7 @@ module.exports = {
 		}
 
 		//Read the lastImport.json file
-		let lastImport = JSON.parse(fs.readFileSync(`./lastImport.json`, 'utf-8'));
+		let lastImport = JSON.parse(fs.readFileSync('./lastImport.json', 'utf-8'));
 
 		let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length];
 
@@ -85,7 +86,7 @@ module.exports = {
 					lastImport.matchId = lastImport.matchId + 1;
 
 					//Create the lastImport.json file
-					fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
+					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 					return;
 				} else if (Date.parse(match.raw_start) < fiveMinutesAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
@@ -111,7 +112,7 @@ module.exports = {
 					lastImport.matchId = lastImport.matchId + 1;
 
 					//Create the lastImport.json file
-					fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
+					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 					return;
 				}
 
@@ -129,7 +130,7 @@ module.exports = {
 					}
 
 					//Create the lastImport.json file
-					fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
+					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 					return;
 				} else {
 					try {
@@ -144,7 +145,7 @@ module.exports = {
 							lastImport.matchId = lastImport.matchId + 1;
 
 							//Create the lastImport.json file
-							fs.writeFileSync(`./lastImport.json`, JSON.stringify(lastImport, null, 2), 'utf-8');
+							fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 							return;
 						} else {
 							return;
