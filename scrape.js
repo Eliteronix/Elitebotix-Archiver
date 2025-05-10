@@ -96,7 +96,7 @@ module.exports = {
 						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'importMatch',
-							additions: `${lastImport.matchId};1;${Date.parse(match.raw_start)};${match.name.toLowerCase()}`,
+							additions: `${lastImport.matchId};1;${Date.parse(match.raw_start)};${match.name}`,
 							priority: 1,
 							date: date
 						});
@@ -123,6 +123,7 @@ module.exports = {
 					//Fallback in case we got ahead of the matches
 					if (lastImport.lastMatchFound < lastImport.matchId - 100) {
 						lastImport.matchId = lastImport.lastMatchFound;
+						// eslint-disable-next-line no-console
 						console.log('Match not found for 100 matches in a row, going back to last match found:', lastImport.matchId);
 					} else {
 						//Go next if match not found
