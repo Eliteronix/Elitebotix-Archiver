@@ -60,6 +60,8 @@ module.exports = {
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
 				lastImport.lastMatchFound = lastImport.matchId;
+				lastImport.matchStart = Date.parse(match.raw_start);
+
 				let sixHoursAgo = new Date();
 				sixHoursAgo.setUTCHours(sixHoursAgo.getUTCHours() - 6);
 
