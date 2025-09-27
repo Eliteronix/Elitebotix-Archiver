@@ -222,7 +222,7 @@ module.exports = {
 				});
 
 			// Wait a minute between verifications to not spam the API / get rate limited
-			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+			await new Promise(resolve => setTimeout(resolve, 20 * 1000));
 			return;
 		}
 
