@@ -401,8 +401,6 @@ module.exports = {
 			]
 		});
 
-		console.log('Verifying match:', matchToVerify ? matchToVerify.matchId : 'None found with referee null, trying without');
-
 		if (!matchToVerify) {
 			matchToVerify = await DBElitebotixOsuMultiMatches.findOne({
 				attributes: ['matchId', 'matchName', 'matchStartDate'],
