@@ -177,5 +177,7 @@ module.exports = {
 					}
 				}
 			});
+
+		console.log('Finished scrape.js, proceeding to processIncompleteScores.js');
 	},
 };
