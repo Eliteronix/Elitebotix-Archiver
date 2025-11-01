@@ -62,6 +62,7 @@ module.exports = {
 
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
+				console.log(`Found match ID ${lastImport.matchId}: ${match.name}`);
 				lastImport.lastMatchFound = lastImport.matchId;
 				lastImport.matchStart = Date.parse(match.raw_start);
 
@@ -72,12 +73,14 @@ module.exports = {
 				fiveMinutesAgo.setUTCMinutes(fiveMinutesAgo.getUTCMinutes() - 5);
 				if (match.raw_end || Date.parse(match.raw_start) < sixHoursAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
+						console.log(`Saving match ID ${lastImport.matchId}: ${match.name}`);
 						await saveOsuMultiScores(match);
 						let now = new Date();
 						let minutesBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60) % 60;
 						let hoursBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60 / 60) % 24;
 						let daysBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60 / 60 / 24);
 
+						console.log(`Queueing import for match ID ${lastImport.matchId}: ${match.name}`);
 						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'messageChannel',
@@ -90,14 +93,18 @@ module.exports = {
 					//Go next if match found and ended / too long going already
 					lastImport.matchId = lastImport.matchId + 1;
 
+					console.log(`Moving to next match ID ${lastImport.matchId}`);
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 					return;
 				} else if (Date.parse(match.raw_start) < fiveMinutesAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
+						console.log(`Saving ongoing match ID ${lastImport.matchId}: ${match.name}`);
 						await saveOsuMultiScores(match);
 						let date = new Date();
 						date.setUTCMinutes(date.getUTCMinutes() + 5);
+
+						console.log(`Queueing import for ongoing match ID ${lastImport.matchId}: ${match.name}`);
 						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'importMatch',
@@ -105,6 +112,8 @@ module.exports = {
 							priority: 1,
 							date: date
 						});
+
+						console.log(`Queueing current matches update after ongoing match ID ${lastImport.matchId}: ${match.name}`);
 						await DBElitebotixProcessQueue.create({
 							guildId: 'none',
 							task: 'updateCurrentMatches',
@@ -116,11 +125,13 @@ module.exports = {
 					//Go next if match found and ended / too long going already
 					lastImport.matchId = lastImport.matchId + 1;
 
+					console.log(`Moving to next match ID ${lastImport.matchId}`);
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 					return;
 				}
 
+				console.log(`Match ID ${lastImport.matchId} is still ongoing, skipping for now.`);
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
