@@ -123,7 +123,6 @@ module.exports = {
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
-				console.error(err, `API Key Index ${parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length} error going scrape.js mp/${lastImport.matchId}`);
 				if (err.message === 'Not found') {
 					//Fallback in case we got ahead of the matches
 					if (lastImport.lastMatchFound < lastImport.matchId - 100) {
