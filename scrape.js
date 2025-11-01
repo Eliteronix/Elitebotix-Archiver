@@ -6,6 +6,7 @@ const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`
 
 module.exports = {
 	async scrape() {
+		console.log('Starting scrape.js');
 		const fs = require('fs');
 
 		//Check if the lastImport.json file exists
@@ -56,6 +57,8 @@ module.exports = {
 			completeScores: false, // When fetching scores also fetch the beatmap they are for (Allows getting accuracy) (default: false)
 			parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 		});
+
+		console.log(`Using API Key Index ${parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length} for match ID ${lastImport.matchId}`);
 
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
@@ -121,6 +124,7 @@ module.exports = {
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
+				console.error(err, `API Key Index ${parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length} error going scrape.js mp/${lastImport.matchId}`);
 				if (err.message === 'Not found') {
 					//Fallback in case we got ahead of the matches
 					if (lastImport.lastMatchFound < lastImport.matchId - 100) {
