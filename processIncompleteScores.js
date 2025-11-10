@@ -10,16 +10,12 @@ module.exports = {
 
 		let lastImport = JSON.parse(fs.readFileSync('./lastImport.json', 'utf-8'));
 
-		let now = new Date();
-
 		lastImport.incompleteGameScoreCount = await DBElitebotixOsuMultiGames.count({
 			where: {
 				tourneyMatch: true,
 				warmup: null
 			}
 		});
-
-		console.log(new Date() - now, 'ms to count incomplete game scores');
 
 		lastImport.verifyMatchesCount = await DBElitebotixOsuMultiMatches.count({
 			where: {
@@ -30,8 +26,6 @@ module.exports = {
 				},
 			},
 		});
-
-		console.log(new Date() - now, 'ms to count verify matches');
 
 		//Create the lastImport.json file
 		fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
