@@ -1,10 +1,41 @@
-const { DBElitebotixOsuMultiGames, DBElitebotixProcessQueue, DBElitebotixOsuMultiGameScores } = require('./dbObjects');
+const { DBElitebotixOsuMultiGames, DBElitebotixProcessQueue, DBElitebotixOsuMultiGameScores, DBElitebotixOsuMultiMatches } = require('./dbObjects');
 const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
 const { verifyMatches } = require('./verifyMatches');
+const { Op } = require('sequelize');
 
 module.exports = {
 	async processIncompleteScores() {
+		const fs = require('fs');
+
+		let lastImport = JSON.parse(fs.readFileSync('./lastImport.json', 'utf-8'));
+
+		let now = new Date();
+
+		lastImport.incompleteGameScoreCount = await DBElitebotixOsuMultiGames.count({
+			where: {
+				tourneyMatch: true,
+				warmup: null
+			}
+		});
+
+		console.log(new Date() - now, 'ms to count incomplete game scores');
+
+		lastImport.verifyMatchesCount = await DBElitebotixOsuMultiMatches.count({
+			where: {
+				tourneyMatch: true,
+				verifiedAt: null,
+				matchEndDate: {
+					[Op.not]: null,
+				},
+			},
+		});
+
+		console.log(new Date() - now, 'ms to count verify matches');
+
+		//Create the lastImport.json file
+		fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
+
 		let incompleteMatchScore = await DBElitebotixOsuMultiGames.findOne({
 			attributes: ['id', 'matchId', 'updatedAt'],
 			where: {
