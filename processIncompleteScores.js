@@ -27,6 +27,13 @@ module.exports = {
 			},
 		});
 
+		lastImport.refereeMatchesCount = await DBElitebotixOsuMultiMatches.count({
+			where: {
+				tourneyMatch: true,
+				referee: null,
+			},
+		});
+
 		//Create the lastImport.json file
 		fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 
