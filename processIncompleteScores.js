@@ -13,7 +13,10 @@ module.exports = {
 		lastImport.incompleteGameScoreCount = await DBElitebotixOsuMultiGames.count({
 			where: {
 				tourneyMatch: true,
-				warmup: null
+				warmup: null,
+				matchEndDate: {
+					[Op.not]: null,
+				},
 			}
 		});
 
@@ -31,6 +34,9 @@ module.exports = {
 			where: {
 				tourneyMatch: true,
 				referee: null,
+				matchEndDate: {
+					[Op.not]: null,
+				},
 			},
 		});
 
