@@ -51,6 +51,9 @@ module.exports = {
 			]
 		});
 
+		console.log(`Incomplete match scores remaining: ${lastImport.incompleteGameScoreCount}`);
+		console.log(incompleteMatchScore);
+
 		if (incompleteMatchScore) {
 			let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(incompleteMatchScore.matchId) % process.env.OSUTOKENSV1.split('-').length];
 
