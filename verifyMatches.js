@@ -458,528 +458,221 @@ module.exports = {
 								regexMatch = matchesPaused[0];
 							}
 
-							if (regexMatch) {
-								let json = JSON.parse(regexMatch);
+							if (!regexMatch) {
+								//Could not find the match data in the html - skip verification for now
+								return true;
+							}
 
-								while (json.first_event_id !== json.events[0].id) {
-									let firstIdInJSON = json.events[0].id;
+							let json = JSON.parse(regexMatch);
 
-									let earlierEvents = await fetch(`https://osu.ppy.sh/community/matches/${match.id}?before=${json.events[0].id}&limit=100`)
-										.then(async (res) => {
-											let htmlCode = await res.text();
-											htmlCode = htmlCode.replace(/&quot;/gm, '"');
-											const matchRunningRegex = /{"match".+,"current_game_id":\d+}/gm;
-											const matchPausedRegex = /{"match".+,"current_game_id":null}/gm;
-											const matchesRunning = matchRunningRegex.exec(htmlCode);
-											const matchesPaused = matchPausedRegex.exec(htmlCode);
+							while (json.first_event_id !== json.events[0].id) {
+								let firstIdInJSON = json.events[0].id;
 
-											if (matchesRunning && matchesRunning[0]) {
-												regexMatch = matchesRunning[0];
-											}
+								let earlierEvents = await fetch(`https://osu.ppy.sh/community/matches/${match.id}?before=${json.events[0].id}&limit=100`)
+									.then(async (res) => {
+										let htmlCode = await res.text();
+										htmlCode = htmlCode.replace(/&quot;/gm, '"');
+										const matchRunningRegex = /{"match".+,"current_game_id":\d+}/gm;
+										const matchPausedRegex = /{"match".+,"current_game_id":null}/gm;
+										const matchesRunning = matchRunningRegex.exec(htmlCode);
+										const matchesPaused = matchPausedRegex.exec(htmlCode);
 
-											if (matchesPaused && matchesPaused[0]) {
-												regexMatch = matchesPaused[0];
-											}
+										if (matchesRunning && matchesRunning[0]) {
+											regexMatch = matchesRunning[0];
+										}
 
-											let json = JSON.parse(regexMatch);
+										if (matchesPaused && matchesPaused[0]) {
+											regexMatch = matchesPaused[0];
+										}
 
-											return json.events;
-										});
+										let json = JSON.parse(regexMatch);
 
-									json.events = earlierEvents.concat(json.events);
+										return json.events;
+									});
 
-									if (json.events[0].id === firstIdInJSON) {
-										break;
-									}
+								json.events = earlierEvents.concat(json.events);
+
+								if (json.events[0].id === firstIdInJSON) {
+									break;
+								}
+							}
+
+							if (json.events[0].detail.type !== 'match-created') {
+								return await updateMatchData(match.id, null, null, 'Not determinable who created the match');
+							}
+
+							//Find a score by the match creator
+							let scores = await DBElitebotixOsuMultiGameScores.findAll({
+								attributes: ['score'],
+								where: {
+									matchId: match.id,
+									osuUserId: json.events[0].user_id,
+									score: {
+										[Op.gte]: 10000,
+									},
+								},
+							});
+
+							if (scores.length) {
+								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match creator played a round - Not determined if valid');
+							}
+
+							//Match creator did not play a round - Not determined if valid yet
+							let matchToVerifyScores = await DBElitebotixOsuMultiGameScores.findAll({
+								attributes: ['osuUserId', 'beatmapId'],
+								where: {
+									matchId: match.id,
+								},
+							});
+
+							let mapsPlayed = [];
+							let players = [];
+
+							for (let i = 0; i < matchToVerifyScores.length; i++) {
+								let score = matchToVerifyScores[i];
+
+								let map = mapsPlayed.find((map) => map.beatmapId === score.beatmapId);
+
+								if (!map) {
+									mapsPlayed.push({ beatmapId: score.beatmapId, amount: 0 });
 								}
 
-								if (json.events[0].detail.type === 'match-created') {
-									//Find a score by the match creator
-									let scores = await DBElitebotixOsuMultiGameScores.findAll({
-										attributes: ['score'],
-										where: {
-											matchId: match.id,
-											osuUserId: json.events[0].user_id,
-											score: {
-												[Op.gte]: 10000,
+								if (!players.includes(score.osuUserId)) {
+									players.push(score.osuUserId);
+								}
+							}
+
+							let acronym = matchToVerify.matchName.replace(/:.*/gm, '');
+
+							let weeksBeforeMatch = new Date(matchToVerify.matchStartDate);
+							weeksBeforeMatch.setDate(weeksBeforeMatch.getDate() - 56);
+
+							let weeksAfterMatch = new Date(matchToVerify.matchStartDate);
+							weeksAfterMatch.setDate(weeksAfterMatch.getDate() + 56);
+
+							//Match creator did not play a round
+							let relatedMatches = await DBElitebotixOsuMultiMatches.findAll({
+								attributes: ['matchId', 'matchName', 'verifiedAt', 'verifiedBy'],
+								where: {
+									matchStartDate: {
+										[Op.between]: [weeksBeforeMatch, weeksAfterMatch],
+									},
+									matchName: {
+										[Op.like]: `${acronym}:%`,
+									},
+								},
+							});
+
+							let relatedGames = await DBElitebotixOsuMultiGames.findAll({
+								attributes: ['gameId'],
+								where: {
+									matchId: {
+										[Op.in]: relatedMatches.map((match) => match.matchId),
+									},
+									warmup: false,
+								},
+							});
+
+							let relatedScores = await DBElitebotixOsuMultiGameScores.findAll({
+								attributes: ['matchId', 'osuUserId', 'beatmapId'],
+								where: {
+									gameId: {
+										[Op.in]: relatedGames.map((game) => game.gameId),
+									},
+									[Op.or]: [
+										{
+											beatmapId: {
+												[Op.in]: mapsPlayed.map((map) => map.beatmapId),
 											},
 										},
-									});
-
-									if (scores.length) {
-										//Match creator played a round - Not determined if valid
-										await DBElitebotixOsuMultiMatches.update({
-											verifiedBy: verificationUser.osuUserId, // Elitebotix
-											verificationComment: 'Match creator played a round - Not determined if valid',
-											referee: json.events[0].user_id,
-										}, {
-											where: {
-												matchId: match.id,
+										{
+											osuUserId: {
+												[Op.in]: players,
 											},
-										});
+										},
+									],
+								},
+							});
 
-										if (logVerificationProcess) {
-											// eslint-disable-next-line no-console
-											console.log(`Match ${matchToVerify.matchId} unverified - Match creator played a round - Not determined if valid`);
-										}
-									} else {
-										//Match creator did not play a round - Not determined if valid yet
-										let matchToVerifyScores = await DBElitebotixOsuMultiGameScores.findAll({
-											attributes: ['osuUserId', 'beatmapId'],
-											where: {
-												matchId: match.id,
-											},
-										});
+							let playersInTheOriginalLobby = [...new Set(matchToVerifyScores.map((score) => score.osuUserId))];
 
-										let mapsPlayed = [];
-										let players = [];
+							let otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps = [];
+							let otherMatchesWithTheSamePlayers = [];
 
-										for (let i = 0; i < matchToVerifyScores.length; i++) {
-											let score = matchToVerifyScores[i];
+							for (let i = 0; i < relatedScores.length; i++) {
+								let score = relatedScores[i];
 
-											let map = mapsPlayed.find((map) => map.beatmapId === score.beatmapId);
+								if (score.matchId === match.id) {
+									continue;
+								}
 
-											if (!map) {
-												mapsPlayed.push({ beatmapId: score.beatmapId, amount: 0 });
-											}
+								let map = mapsPlayed.find((map) => map.beatmapId === score.beatmapId);
 
-											if (!players.includes(score.osuUserId)) {
-												players.push(score.osuUserId);
-											}
-										}
-
-										let acronym = matchToVerify.matchName.replace(/:.*/gm, '');
-
-										let weeksBeforeMatch = new Date(matchToVerify.matchStartDate);
-										weeksBeforeMatch.setDate(weeksBeforeMatch.getDate() - 56);
-
-										let weeksAfterMatch = new Date(matchToVerify.matchStartDate);
-										weeksAfterMatch.setDate(weeksAfterMatch.getDate() + 56);
-
-										//Match creator did not play a round
-										let relatedMatches = await DBElitebotixOsuMultiMatches.findAll({
-											attributes: ['matchId', 'matchName', 'verifiedAt', 'verifiedBy'],
-											where: {
-												matchStartDate: {
-													[Op.between]: [weeksBeforeMatch, weeksAfterMatch],
-												},
-												matchName: {
-													[Op.like]: `${acronym}:%`,
-												},
-											},
-										});
-
-										let relatedGames = await DBElitebotixOsuMultiGames.findAll({
-											attributes: ['gameId'],
-											where: {
-												matchId: {
-													[Op.in]: relatedMatches.map((match) => match.matchId),
-												},
-												warmup: false,
-											},
-										});
-
-										let relatedScores = await DBElitebotixOsuMultiGameScores.findAll({
-											attributes: ['matchId', 'osuUserId', 'beatmapId'],
-											where: {
-												gameId: {
-													[Op.in]: relatedGames.map((game) => game.gameId),
-												},
-												[Op.or]: [
-													{
-														beatmapId: {
-															[Op.in]: mapsPlayed.map((map) => map.beatmapId),
-														},
-													},
-													{
-														osuUserId: {
-															[Op.in]: players,
-														},
-													},
-												],
-											},
-										});
-
-										let playersInTheOriginalLobby = [...new Set(matchToVerifyScores.map((score) => score.osuUserId))];
-
-										let otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps = [];
-										let otherMatchesWithTheSamePlayers = [];
-
-										for (let i = 0; i < relatedScores.length; i++) {
-											let score = relatedScores[i];
-
-											if (score.matchId === match.id) {
-												continue;
-											}
-
-											let map = mapsPlayed.find((map) => map.beatmapId === score.beatmapId);
-
-											if (map) {
-												if (!otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.includes(score.osuUserId)) {
-													otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.push(score.osuUserId);
-												}
-
-												map.amount++;
-											}
-
-											if (players.includes(score.osuUserId)) {
-												let otherMatch = otherMatchesWithTheSamePlayers.find((match) => match.matchId === score.matchId);
-
-												if (!otherMatch) {
-													let relatedMatch = relatedMatches.find((match) => match.matchId === score.matchId);
-
-													otherMatchesWithTheSamePlayers.push({ matchId: score.matchId, matchName: relatedMatch.matchName, verifiedAt: relatedMatch.verifiedAt, verifiedBy: relatedMatch.verifiedBy });
-												}
-											}
-										}
-
-										// let playersThatAreOnlyInOtherMatches = otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.filter((player) => !playersInTheOriginalLobby.includes(player));
-
-										let qualsMatchOfTheSamePlayers = otherMatchesWithTheSamePlayers.find((match) => match.matchName.toLowerCase().includes('(qualifiers)') || match.matchName.toLowerCase().includes('(qualifier)') || match.matchName.toLowerCase().includes('(quals)') || match.matchName.toLowerCase().includes('(kwalifikacje)'));
-
-										if (matchToVerify.matchName.toLowerCase().includes('(qualifiers)') || matchToVerify.matchName.toLowerCase().includes('(qualifier)') || matchToVerify.matchName.toLowerCase().includes('(quals)') || matchToVerify.matchName.toLowerCase().includes('(kwalifikacje)') || matchToVerify.matchName.toLowerCase().includes('(tryouts)')) {
-											if (mapsPlayed.every((map) => map.amount >= 20)) {
-												await DBElitebotixOsuMultiMatches.update({
-													tourneyMatch: true,
-													verifiedAt: new Date(),
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Qualifiers - All maps played more than 20 times outside of the lobby',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGames.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGameScores.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Qualifiers - All maps played more than 20 times outside of the lobby`);
-												}
-
-												await DBElitebotixProcessQueue.create({
-													guildId: 'None',
-													task: 'messageChannel',
-													additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match reffed by someone else - Qualifiers - All maps played more than 20 times outside of the lobby\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
-													priority: 1,
-													date: new Date()
-												});
-											} else {
-												await DBElitebotixOsuMultiMatches.update({
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Qualifiers - Not all maps played more than 20 times outside of the lobby',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Qualifiers - Not all maps played more than 20 times outside of the lobby`);
-												}
-											}
-										} else if (otherMatchesWithTheSamePlayers.length && playersInTheOriginalLobby.length > 1) {
-											if (qualsMatchOfTheSamePlayers && qualsMatchOfTheSamePlayers.verifiedAt) {
-												await DBElitebotixOsuMultiMatches.update({
-													tourneyMatch: true,
-													verifiedAt: new Date(),
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was verified',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGames.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGameScores.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was verified`);
-												}
-
-												await DBElitebotixProcessQueue.create({
-													guildId: 'None',
-													task: 'messageChannel',
-													additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was verified\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
-													priority: 1,
-													date: new Date()
-												});
-											} else if (qualsMatchOfTheSamePlayers && qualsMatchOfTheSamePlayers.verifiedBy) {
-												await DBElitebotixOsuMultiMatches.update({
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that could not be verified',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that could not be verified`);
-												}
-											} else if (qualsMatchOfTheSamePlayers) {
-												await DBElitebotixOsuMultiMatches.update({
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was not yet verified',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was not yet verified`);
-												}
-											} else if (otherMatchesWithTheSamePlayers.length > 2 && mapsPlayed.some(map => map.amount > 20)) {
-												await DBElitebotixOsuMultiMatches.update({
-													tourneyMatch: true,
-													verifiedAt: new Date(),
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 2 matches by the same players - some maps played more than 20 times in other matches of the same acronym',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGames.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGameScores.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 2 matches by the same players - some maps played more than 20 times in other matches of the same acronym`);
-												}
-
-												await DBElitebotixProcessQueue.create({
-													guildId: 'None',
-													task: 'messageChannel',
-													additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 2 matches by the same players - some maps played more than 20 times in other matches of the same acronym\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
-													priority: 1,
-													date: new Date()
-												});
-											} else if (otherMatchesWithTheSamePlayers.length > 4 && mapsPlayed.some(map => map.amount > 15)) {
-												await DBElitebotixOsuMultiMatches.update({
-													tourneyMatch: true,
-													verifiedAt: new Date(),
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 4 matches by the same players - some maps played more than 15 times in other matches of the same acronym',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGames.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGameScores.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 4 matches by the same players - some maps played more than 15 times in other matches of the same acronym`);
-												}
-
-												await DBElitebotixProcessQueue.create({
-													guildId: 'None',
-													task: 'messageChannel',
-													additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 4 matches by the same players - some maps played more than 15 times in other matches of the same acronym\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
-													priority: 1,
-													date: new Date()
-												});
-											} else if (otherMatchesWithTheSamePlayers.length > 6 && mapsPlayed.some(map => map.amount > 10)) {
-												await DBElitebotixOsuMultiMatches.update({
-													tourneyMatch: true,
-													verifiedAt: new Date(),
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 6 matches by the same players - some maps played more than 10 times in other matches of the same acronym',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGames.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGameScores.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 6 matches by the same players - some maps played more than 10 times in other matches of the same acronym`);
-												}
-
-												await DBElitebotixProcessQueue.create({
-													guildId: 'None',
-													task: 'messageChannel',
-													additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 6 matches by the same players - some maps played more than 10 times in other matches of the same acronym\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
-													priority: 1,
-													date: new Date()
-												});
-											} else if (otherMatchesWithTheSamePlayers.length > 8 && mapsPlayed.some(map => map.amount > 5)) {
-												await DBElitebotixOsuMultiMatches.update({
-													tourneyMatch: true,
-													verifiedAt: new Date(),
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 8 matches by the same players - some maps played more than 5 times in other matches of the same acronym',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGames.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												await DBElitebotixOsuMultiGameScores.update({
-													tourneyMatch: true,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 8 matches by the same players - some maps played more than 5 times in other matches of the same acronym`);
-												}
-
-												await DBElitebotixProcessQueue.create({
-													guildId: 'None',
-													task: 'messageChannel',
-													additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n+ Valid: True\nComment: Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 8 matches by the same players - some maps played more than 5 times in other matches of the same acronym\`\`\`https://osu.ppy.sh/mp/${match.id} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
-													priority: 1,
-													date: new Date()
-												});
-											} else {
-												await DBElitebotixOsuMultiMatches.update({
-													verifiedBy: verificationUser.osuUserId, // Elitebotix
-													verificationComment: 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - not verifyable',
-													referee: json.events[0].user_id,
-												}, {
-													where: {
-														matchId: match.id,
-													},
-												});
-
-												if (logVerificationProcess) {
-													// eslint-disable-next-line no-console
-													console.log(`Match ${match.id} verified - Match reffed by someone else - Not Qualifiers - No quals match of the same players - not verifyable`);
-												}
-											}
-										} else {
-											await DBElitebotixOsuMultiMatches.update({
-												verifiedBy: verificationUser.osuUserId, // Elitebotix
-												verificationComment: 'Match reffed by someone else - Verification status not determinable',
-												referee: json.events[0].user_id,
-											}, {
-												where: {
-													matchId: match.id,
-												},
-											});
-
-											if (logVerificationProcess) {
-												// eslint-disable-next-line no-console
-												console.log(`Match ${match.id} verified - Match reffed by someone else - Verification status not determinable`);
-											}
-										}
+								if (map) {
+									if (!otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.includes(score.osuUserId)) {
+										otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.push(score.osuUserId);
 									}
-								} else {
-									await DBElitebotixOsuMultiMatches.update({
-										verifiedBy: verificationUser.osuUserId, // Elitebotix
-										verificationComment: 'Not determinable who created the match',
-									}, {
-										where: {
-											matchId: match.id,
-										},
-									});
 
-									if (logVerificationProcess) {
-										// eslint-disable-next-line no-console
-										console.log(`Match ${match.id} verified - Not determinable who created the match`);
+									map.amount++;
+								}
+
+								if (players.includes(score.osuUserId)) {
+									let otherMatch = otherMatchesWithTheSamePlayers.find((match) => match.matchId === score.matchId);
+
+									if (!otherMatch) {
+										let relatedMatch = relatedMatches.find((match) => match.matchId === score.matchId);
+
+										otherMatchesWithTheSamePlayers.push({ matchId: score.matchId, matchName: relatedMatch.matchName, verifiedAt: relatedMatch.verifiedAt, verifiedBy: relatedMatch.verifiedBy });
 									}
 								}
 							}
+
+							// let playersThatAreOnlyInOtherMatches = otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.filter((player) => !playersInTheOriginalLobby.includes(player));
+
+							let qualsMatchOfTheSamePlayers = otherMatchesWithTheSamePlayers.find((match) => match.matchName.toLowerCase().includes('(qualifiers)') || match.matchName.toLowerCase().includes('(qualifier)') || match.matchName.toLowerCase().includes('(quals)') || match.matchName.toLowerCase().includes('(kwalifikacje)'));
+
+							if (matchToVerify.matchName.toLowerCase().includes('(qualifiers)') || matchToVerify.matchName.toLowerCase().includes('(qualifier)') || matchToVerify.matchName.toLowerCase().includes('(quals)') || matchToVerify.matchName.toLowerCase().includes('(kwalifikacje)') || matchToVerify.matchName.toLowerCase().includes('(tryouts)')) {
+								if (mapsPlayed.every((map) => map.amount >= 20)) {
+									return await updateMatchData(match.id, true, json.events[0].user_id, 'Match reffed by someone else - Qualifiers - All maps played more than 20 times outside of the lobby');
+								}
+
+								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match reffed by someone else - Qualifiers - Not all maps played more than 20 times outside of the lobby');
+							}
+
+							if (!otherMatchesWithTheSamePlayers.length || otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps.length < 2) {
+								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match reffed by someone else - Verification status not determinable');
+							}
+
+							if (qualsMatchOfTheSamePlayers && qualsMatchOfTheSamePlayers.verifiedAt) {
+								return await updateMatchData(match.id, true, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was verified');
+							}
+
+							if (qualsMatchOfTheSamePlayers && qualsMatchOfTheSamePlayers.verifiedBy) {
+								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that could not be verified');
+							}
+
+							if (qualsMatchOfTheSamePlayers) {
+								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - The same players played in a Qualifiers match that was not yet verified');
+							}
+
+							if (otherMatchesWithTheSamePlayers.length > 2 && mapsPlayed.some(map => map.amount > 20)) {
+								return await updateMatchData(match.id, true, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 2 matches by the same players - some maps played more than 20 times in other matches of the same acronym');
+							}
+
+							if (otherMatchesWithTheSamePlayers.length > 4 && mapsPlayed.some(map => map.amount > 15)) {
+								return await updateMatchData(match.id, true, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 4 matches by the same players - some maps played more than 15 times in other matches of the same acronym');
+							}
+
+							if (otherMatchesWithTheSamePlayers.length > 6 && mapsPlayed.some(map => map.amount > 10)) {
+								return await updateMatchData(match.id, true, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 6 matches by the same players - some maps played more than 10 times in other matches of the same acronym');
+							}
+
+							if (otherMatchesWithTheSamePlayers.length > 8 && mapsPlayed.some(map => map.amount > 5)) {
+								return await updateMatchData(match.id, true, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - more than 8 matches by the same players - some maps played more than 5 times in other matches of the same acronym');
+							}
+
+							return await updateMatchData(match.id, null, json.events[0].user_id, 'Match reffed by someone else - Not Qualifiers - No quals match of the same players - not verifyable');
+
 						});
 				} catch (e) {
 					if (!e.message.endsWith('reason: Client network socket disconnected before secure TLS connection was established')
@@ -993,28 +686,84 @@ module.exports = {
 			.catch(async (err) => {
 				if (err.message === 'Not found') {
 					//If its not found anymore it should be fake because it must be created in a different way
-					await DBElitebotixOsuMultiMatches.update({
-						verifiedBy: verificationUser.osuUserId, // Elitebotix
-						verificationComment: 'match not found - can\'t be determined if fake or not',
-						referee: -1,
-					}, {
-						where: {
-							matchId: matchToVerify.matchId,
-						},
-					});
-
-					if (logVerificationProcess) {
-						// eslint-disable-next-line no-console
-						console.log(`Match ${matchToVerify.matchId} verified - match not found - can't be determined if fake or not`);
-					}
-				} else {
-					// Go same if error
-					console.error(err);
-					return true;
+					return await updateMatchData(matchToVerify.matchId, false, -1, 'match not found - fake because it must be created in a different way');
 				}
+
+				// Go same if error
+				console.error(err);
+				return true;
 			});
 
 		await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
 		return;
 	}
 };
+
+async function updateMatchData(matchId, verified, referee, comment) {
+	let tourneyMatch = verified;
+
+	if (verified == null) {
+		tourneyMatch = true;
+	}
+
+	let updateData = {
+		verifiedBy: verificationUser.osuUserId,
+		verificationComment: comment,
+	};
+
+	if (verified !== null) {
+		updateData.tourneyMatch = tourneyMatch;
+		updateData.verifiedAt = new Date();
+	}
+
+	if (referee) {
+		updateData.referee = referee;
+	}
+
+	await DBElitebotixOsuMultiMatches.update(updateData, {
+		where: {
+			matchId: matchId,
+		},
+	});
+
+	if (verified !== null) {
+		await DBElitebotixOsuMultiGames.update({
+			tourneyMatch: tourneyMatch,
+		}, {
+			where: {
+				matchId: matchId,
+			},
+		});
+
+		await DBElitebotixOsuMultiGameScores.update({
+			tourneyMatch: tourneyMatch,
+		}, {
+			where: {
+				matchId: matchId,
+			},
+		});
+	}
+
+	let verifiedString = 'unverified';
+	let validityString = '- Invalid';
+
+	if (verified) {
+		verifiedString = 'verified';
+		validityString = '+ Valid';
+	}
+
+	if (logVerificationProcess) {
+		// eslint-disable-next-line no-console
+		console.log(`Match ${matchId} ${verifiedString} - ${comment}`);
+	}
+
+	if (verified !== null) {
+		await DBElitebotixProcessQueue.create({
+			guildId: 'None',
+			task: 'messageChannel',
+			additions: `${process.env.VERIFICATIONLOG};\`\`\`diff\n${validityString}: ${tourneyMatch}\nComment: ${comment}\`\`\`https://osu.ppy.sh/mp/${matchId} was verified by ${verificationUser.username}#${verificationUser.discriminator} (<@${verificationUser.clientId}> | <https://osu.ppy.sh/users/${verificationUser.osuUserId}>)`,
+			priority: 1,
+			date: new Date()
+		});
+	}
+}
