@@ -393,7 +393,7 @@ module.exports = {
 			attributes: ['matchId', 'matchName', 'matchStartDate'],
 			where: {
 				tourneyMatch: true,
-				verifiedBy: null,
+				verifiedAt: null,
 				referee: null,
 			},
 			order: [
@@ -406,7 +406,7 @@ module.exports = {
 				attributes: ['matchId', 'matchName', 'matchStartDate'],
 				where: {
 					tourneyMatch: true,
-					verifiedBy: null,
+					verifiedAt: null,
 					matchEndDate: {
 						[Op.not]: null,
 					},
@@ -513,10 +513,6 @@ module.exports = {
 								},
 							});
 
-							if (scores.length) {
-								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match creator played a round - Not determined if valid');
-							}
-
 							//Match creator did not play a round - Not determined if valid yet
 							let matchToVerifyScores = await DBElitebotixOsuMultiGameScores.findAll({
 								attributes: ['osuUserId', 'beatmapId'],
@@ -594,7 +590,20 @@ module.exports = {
 								},
 							});
 
-							let playersInTheOriginalLobby = [...new Set(matchToVerifyScores.map((score) => score.osuUserId))];
+							//Match creator played a round
+							if (scores.length) {
+								if (relatedMatches.length == 0) {
+									if (weeksAfterMatch > new Date()) {
+										return await updateMatchData(match.id, null, json.events[0].user_id, 'Match creator played a round - No related matches found but 8 weeks after match date not reached yet - Not determined if valid');
+									}
+
+									return await updateMatchData(match.id, false, json.events[0].user_id, 'Match creator played a round - No related matches found within 8 weeks - Shouldnt be valid');
+								}
+
+								return await updateMatchData(match.id, null, json.events[0].user_id, 'Match creator played a round - Not determined if valid');
+							}
+
+							// let playersInTheOriginalLobby = [...new Set(matchToVerifyScores.map((score) => score.osuUserId))];
 
 							let otherPlayersOutsideOfTheLobbyThatPlayedTheSameMaps = [];
 							let otherMatchesWithTheSamePlayers = [];
