@@ -61,7 +61,6 @@ module.exports = {
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
 				lastImport.lastMatchFound = lastImport.matchId;
-				lastImport.matchStart = Date.parse(match.raw_start);
 
 				timeBehindMatchCreation.set(Math.floor((Date.now() - Date.parse(match.raw_start)) / 1000));
 

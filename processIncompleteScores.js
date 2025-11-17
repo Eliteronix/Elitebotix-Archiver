@@ -7,20 +7,17 @@ const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount } = re
 
 module.exports = {
 	async processIncompleteScores() {
-		const fs = require('fs');
 
-		let lastImport = JSON.parse(fs.readFileSync('./lastImport.json', 'utf-8'));
-
-		lastImport.incompleteGameScoreCount = await DBElitebotixOsuMultiGames.count({
+		let incompleteGameScoreCountMetric = await DBElitebotixOsuMultiGames.count({
 			where: {
 				tourneyMatch: true,
 				warmup: null,
 			}
 		});
 
-		incompleteGameScoreCount.set(lastImport.incompleteGameScoreCount);
+		incompleteGameScoreCount.set(incompleteGameScoreCountMetric);
 
-		lastImport.verifyMatchesCount = await DBElitebotixOsuMultiMatches.count({
+		let verifyMatchesCountMetric = await DBElitebotixOsuMultiMatches.count({
 			where: {
 				tourneyMatch: true,
 				verifiedAt: null,
@@ -30,9 +27,9 @@ module.exports = {
 			},
 		});
 
-		verifyMatchesCount.set(lastImport.verifyMatchesCount);
+		verifyMatchesCount.set(verifyMatchesCountMetric);
 
-		lastImport.refereeMatchesCount = await DBElitebotixOsuMultiMatches.count({
+		let refereeMatchesCountMetric = await DBElitebotixOsuMultiMatches.count({
 			where: {
 				tourneyMatch: true,
 				referee: null,
@@ -42,10 +39,7 @@ module.exports = {
 			},
 		});
 
-		refereeMatchesCount.set(lastImport.refereeMatchesCount);
-
-		//Create the lastImport.json file
-		fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
+		refereeMatchesCount.set(refereeMatchesCountMetric);
 
 		let incompleteMatchScore = await DBElitebotixOsuMultiGames.findOne({
 			attributes: ['id', 'matchId', 'updatedAt'],
