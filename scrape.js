@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const { processIncompleteScores } = require('./processIncompleteScores');
 const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
+const { timeBehindMatchCreation } = require('./metrics.js');
 
 module.exports = {
 	async scrape() {
@@ -61,6 +62,8 @@ module.exports = {
 			.then(async (match) => {
 				lastImport.lastMatchFound = lastImport.matchId;
 				lastImport.matchStart = Date.parse(match.raw_start);
+
+				timeBehindMatchCreation.set(Math.floor((Date.now() - Date.parse(match.raw_start)) / 1000));
 
 				let sixHoursAgo = new Date();
 				sixHoursAgo.setUTCHours(sixHoursAgo.getUTCHours() - 6);

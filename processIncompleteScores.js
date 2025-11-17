@@ -3,6 +3,7 @@ const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
 const { verifyMatches } = require('./verifyMatches');
 const { Op } = require('sequelize');
+const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount } = require('./metrics.js');
 
 module.exports = {
 	async processIncompleteScores() {
@@ -17,6 +18,8 @@ module.exports = {
 			}
 		});
 
+		incompleteGameScoreCount.set(lastImport.incompleteGameScoreCount);
+
 		lastImport.verifyMatchesCount = await DBElitebotixOsuMultiMatches.count({
 			where: {
 				tourneyMatch: true,
@@ -27,6 +30,8 @@ module.exports = {
 			},
 		});
 
+		verifyMatchesCount.set(lastImport.verifyMatchesCount);
+
 		lastImport.refereeMatchesCount = await DBElitebotixOsuMultiMatches.count({
 			where: {
 				tourneyMatch: true,
@@ -36,6 +41,8 @@ module.exports = {
 				},
 			},
 		});
+
+		refereeMatchesCount.set(lastImport.refereeMatchesCount);
 
 		//Create the lastImport.json file
 		fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
