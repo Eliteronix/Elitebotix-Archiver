@@ -402,6 +402,11 @@ module.exports = {
 		});
 
 		if (!matchToVerify) {
+			if (logVerificationProcess) {
+				// eslint-disable-next-line no-console
+				console.log('No match to verify without referee');
+			}
+
 			matchToVerify = await DBElitebotixOsuMultiMatches.findOne({
 				attributes: ['matchId', 'matchName', 'matchStartDate'],
 				where: {
@@ -415,7 +420,18 @@ module.exports = {
 					['updatedAt', 'ASC']
 				]
 			});
+		} else {
+			if (logVerificationProcess) {
+				// eslint-disable-next-line no-console
+				console.log(`Verifying match ${matchToVerify.matchId} without referee`);
+			}
 		}
+
+		if (logVerificationProcess) {
+			// eslint-disable-next-line no-console
+			console.log('No match to verify');
+		}
+
 
 		if (!matchToVerify) {
 			if (logVerificationProcess) {
@@ -426,6 +442,11 @@ module.exports = {
 			console.log('No match to verify');
 			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
 			return;
+		} else {
+			if (logVerificationProcess) {
+				// eslint-disable-next-line no-console
+				console.log(`Verifying match ${matchToVerify.matchId} that already has a referee`);
+			}
 		}
 
 		let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(matchToVerify.matchId) % process.env.OSUTOKENSV1.split('-').length];
