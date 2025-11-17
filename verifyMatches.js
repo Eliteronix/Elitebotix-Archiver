@@ -3,6 +3,7 @@ const { matchmaking, logVerificationProcess, verificationUser } = require('./con
 const { Op } = require('sequelize');
 const osu = require('node-osu');
 const fs = require('fs');
+const { osuApiRequests, osuWebRequests } = require('./metrics');
 
 module.exports = {
 	async verifyMatches() {
@@ -39,9 +40,11 @@ module.exports = {
 				parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 			});
 
+			osuApiRequests.inc();
 			await osuApi.getMatch({ mp: verifyMatch.matchId })
 				.then(async (match) => {
 					try {
+						osuWebRequests.inc();
 						await fetch(`https://osu.ppy.sh/community/matches/${match.id}`)
 							.then(async (res) => {
 								let htmlCode = await res.text();
@@ -453,9 +456,11 @@ module.exports = {
 			parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 		});
 
+		osuApiRequests.inc();
 		await osuApi.getMatch({ mp: matchToVerify.matchId })
 			.then(async (match) => {
 				try {
+					osuWebRequests.inc();
 					return await fetch(`https://osu.ppy.sh/community/matches/${match.id}`)
 						.then(async (res) => {
 							let htmlCode = await res.text();
@@ -484,6 +489,7 @@ module.exports = {
 							while (json.first_event_id !== json.events[0].id) {
 								let firstIdInJSON = json.events[0].id;
 
+								osuWebRequests.inc();
 								let earlierEvents = await fetch(`https://osu.ppy.sh/community/matches/${match.id}?before=${json.events[0].id}&limit=100`)
 									.then(async (res) => {
 										let htmlCode = await res.text();

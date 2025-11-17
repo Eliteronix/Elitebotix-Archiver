@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 const { processIncompleteScores } = require('./processIncompleteScores');
 const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
-const { timeBehindMatchCreation } = require('./metrics.js');
+const { timeBehindMatchCreation, osuApiRequests, osuWebRequests } = require('./metrics.js');
 
 module.exports = {
 	async scrape() {
@@ -58,6 +58,7 @@ module.exports = {
 			parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 		});
 
+		osuApiRequests.inc();
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
 				lastImport.lastMatchFound = lastImport.matchId;
@@ -143,6 +144,7 @@ module.exports = {
 					try {
 						// Check using node fetch
 						const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+						osuWebRequests.inc();
 						let response = await fetch(`https://osu.ppy.sh/community/matches/${parseInt(lastImport.matchId)}`);
 						let htmlCode = await response.text();
 						let isolatedContent = htmlCode.replace(/[\s\S]+<script id="json-events" type="application\/json">/gm, '').replace(/<\/script>[\s\S]+/gm, '');

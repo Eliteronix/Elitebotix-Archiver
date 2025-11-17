@@ -3,7 +3,7 @@ const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
 const { verifyMatches } = require('./verifyMatches');
 const { Op } = require('sequelize');
-const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount } = require('./metrics.js');
+const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount, osuApiRequests } = require('./metrics.js');
 
 module.exports = {
 	async processIncompleteScores() {
@@ -62,6 +62,7 @@ module.exports = {
 				parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 			});
 
+			osuApiRequests.inc();
 			await osuApi.getMatch({ mp: incompleteMatchScore.matchId })
 				.then(async (match) => {
 					await DBElitebotixProcessQueue.create({

@@ -12,6 +12,18 @@ register.setDefaultLabels({
 client.collectDefaultMetrics({ register });
 
 // Define metrics
+const osuApiRequests = new client.Counter({
+	name: 'osu_api_requests',
+	help: 'osu! API requests',
+});
+register.registerMetric(osuApiRequests);
+
+const osuWebRequests = new client.Counter({
+	name: 'osu_web_requests',
+	help: 'osu! web requests',
+});
+register.registerMetric(osuWebRequests);
+
 const timeBehindMatchCreation = new client.Gauge({
 	name: 'time_behind_match_creation',
 	help: 'The time behind match creation in seconds',
@@ -43,5 +55,7 @@ module.exports = {
 	timeBehindMatchCreation,
 	incompleteGameScoreCount,
 	verifyMatchesCount,
-	refereeMatchesCount
+	refereeMatchesCount,
+	osuApiRequests,
+	osuWebRequests
 };
