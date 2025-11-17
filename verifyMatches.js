@@ -326,7 +326,7 @@ module.exports = {
 				});
 			}
 
-			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+			await new Promise(resolve => setTimeout(resolve, 1 * 20 * 1000));
 			return;
 		}
 
@@ -380,7 +380,7 @@ module.exports = {
 				});
 			}
 
-			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+			await new Promise(resolve => setTimeout(resolve, 1 * 20 * 1000));
 			return;
 		}
 
@@ -440,7 +440,6 @@ module.exports = {
 				console.log('No match to verify');
 			}
 
-			console.log('No match to verify');
 			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
 			return;
 		}
@@ -720,7 +719,7 @@ module.exports = {
 				return true;
 			});
 
-		await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+		await new Promise(resolve => setTimeout(resolve, 1 * 20 * 1000));
 		return;
 	}
 };
