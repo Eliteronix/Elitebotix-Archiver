@@ -434,12 +434,6 @@ module.exports = {
 			}
 		}
 
-		if (logVerificationProcess) {
-			// eslint-disable-next-line no-console
-			console.log('No match to verify');
-		}
-
-
 		if (!matchToVerify) {
 			if (logVerificationProcess) {
 				// eslint-disable-next-line no-console
