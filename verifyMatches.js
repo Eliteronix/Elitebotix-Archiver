@@ -420,6 +420,13 @@ module.exports = {
 					['updatedAt', 'ASC']
 				]
 			});
+
+			if (matchToVerify) {
+				if (logVerificationProcess) {
+					// eslint-disable-next-line no-console
+					console.log(`Verifying match ${matchToVerify.matchId} that already has a referee`);
+				}
+			}
 		} else {
 			if (logVerificationProcess) {
 				// eslint-disable-next-line no-console
@@ -442,11 +449,6 @@ module.exports = {
 			console.log('No match to verify');
 			await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
 			return;
-		} else {
-			if (logVerificationProcess) {
-				// eslint-disable-next-line no-console
-				console.log(`Verifying match ${matchToVerify.matchId} that already has a referee`);
-			}
 		}
 
 		let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(matchToVerify.matchId) % process.env.OSUTOKENSV1.split('-').length];
