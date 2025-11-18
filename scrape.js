@@ -143,7 +143,7 @@ module.exports = {
 				} else {
 					try {
 						// Check using node fetch
-						const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+						//const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 						osuWebRequests.inc();
 						let response = await fetch(`https://osu.ppy.sh/community/matches/${parseInt(lastImport.matchId)}`);
 						let htmlCode = await response.text();
