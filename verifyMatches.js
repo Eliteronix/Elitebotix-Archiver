@@ -398,6 +398,9 @@ module.exports = {
 				tourneyMatch: true,
 				verifiedAt: null,
 				referee: null,
+				matchEndDate: {
+					[Op.not]: null,
+				},
 			},
 			order: [
 				['matchId', 'ASC']
