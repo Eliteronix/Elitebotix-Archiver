@@ -49,7 +49,7 @@ const refereeMatchesCount = new client.Gauge({
 register.registerMetric(refereeMatchesCount);
 
 const processQueueAccesses = new client.Gauge({
-	name: 'database_elitebotix-processQueue',
+	name: 'database_elitebotix_processQueue',
 	help: 'Database elitebotix-processQueue accessed',
 });
 register.registerMetric(processQueueAccesses);
