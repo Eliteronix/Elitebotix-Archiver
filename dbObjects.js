@@ -1,10 +1,13 @@
 const Sequelize = require('sequelize');
 require('dotenv').config();
+const { processQueueAccesses, multiGameScoresAccesses, multiGamesAccesses, multiMatchesAccesses } = require('./metrics');
 
 const elitebotixProcessQueue = new Sequelize('database', 'username', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
-	logging: false,
+	logging: async () => {
+		processQueueAccesses.inc();
+	},
 	storage: `${process.env.ELITEBOTIXROOTPATH}/databases/processQueue.sqlite`,
 	retry: {
 		max: 25, // Maximum retry 15 times
@@ -19,7 +22,9 @@ const elitebotixProcessQueue = new Sequelize('database', 'username', 'password',
 const elitebotixMultiGameScores = new Sequelize('database', 'username', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
-	logging: false,
+	logging: async () => {
+		multiGameScoresAccesses.inc();
+	},
 	storage: `${process.env.ELITEBOTIXROOTPATH}/databases/multiGameScores.sqlite`,
 	retry: {
 		max: 25, // Maximum retry 15 times
@@ -34,7 +39,9 @@ const elitebotixMultiGameScores = new Sequelize('database', 'username', 'passwor
 const elitebotixMultiGames = new Sequelize('database', 'username', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
-	logging: false,
+	logging: async () => {
+		multiGamesAccesses.inc();
+	},
 	storage: `${process.env.ELITEBOTIXROOTPATH}/databases/multiGames.sqlite`,
 	retry: {
 		max: 25, // Maximum retry 15 times
@@ -49,7 +56,9 @@ const elitebotixMultiGames = new Sequelize('database', 'username', 'password', {
 const elitebotixMultiMatches = new Sequelize('database', 'username', 'password', {
 	host: 'localhost',
 	dialect: 'sqlite',
-	logging: false,
+	logging: async () => {
+		multiMatchesAccesses.inc();
+	},
 	storage: `${process.env.ELITEBOTIXROOTPATH}/databases/multiMatches.sqlite`,
 	retry: {
 		max: 25, // Maximum retry 15 times

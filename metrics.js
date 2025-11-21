@@ -48,6 +48,30 @@ const refereeMatchesCount = new client.Gauge({
 });
 register.registerMetric(refereeMatchesCount);
 
+const processQueueAccesses = new client.Gauge({
+	name: 'database_elitebotix-processQueue',
+	help: 'Database elitebotix-processQueue accessed',
+});
+register.registerMetric(processQueueAccesses);
+
+const multiGameScoresAccesses = new client.Gauge({
+	name: 'database_multiGameScores',
+	help: 'Database multiGameScores accessed',
+});
+register.registerMetric(multiGameScoresAccesses);
+
+const multiGamesAccesses = new client.Gauge({
+	name: 'database_multiGames',
+	help: 'Database multiGames accessed',
+});
+register.registerMetric(multiGamesAccesses);
+
+const multiMatchesAccesses = new client.Gauge({
+	name: 'database_multiMatches',
+	help: 'Database multiMatches accessed',
+});
+register.registerMetric(multiMatchesAccesses);
+
 // Export everything you need
 module.exports = {
 	client,
@@ -57,5 +81,9 @@ module.exports = {
 	verifyMatchesCount,
 	refereeMatchesCount,
 	osuApiRequests,
-	osuWebRequests
+	osuWebRequests,
+	processQueueAccesses,
+	multiGameScoresAccesses,
+	multiGamesAccesses,
+	multiMatchesAccesses,
 };
