@@ -1,5 +1,5 @@
 {
-	"logVerificationProcess": true,
+	"logVerificationProcess": false,
 	"verificationUser": {
 		"username": "Elitebotix",
 		"discriminator": "2307",
