@@ -4,6 +4,13 @@ console.log('Bot is starting...');
 
 require('dotenv').config();
 
+const originalConsoleError = console.error;
+const { totalErrorCount } = require('./metrics.js');
+
+console.error = function (...args) {
+	totalErrorCount.inc();
+	originalConsoleError.apply(console, args);
+};
 
 const http = require('http');
 const url = require('url');
@@ -38,3 +45,7 @@ async function scrapeForNewMatches() {
 		scrapeForNewMatches();
 	}, 650);
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+	console.error('Unhandled rejection, index.js:', reason, promise);
+});
