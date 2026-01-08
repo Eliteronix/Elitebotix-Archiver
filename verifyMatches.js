@@ -3,7 +3,7 @@ const { matchmaking, logVerificationProcess, verificationUser } = require('./con
 const { Op } = require('sequelize');
 const osu = require('node-osu');
 const fs = require('fs');
-const { osuApiRequests, osuWebRequests } = require('./metrics');
+const { osuApiRequests, osuWebRequests, verificationMatchAge } = require('./metrics');
 
 module.exports = {
 	async verifyMatches() {
@@ -414,7 +414,7 @@ module.exports = {
 			}
 
 			matchToVerify = await DBElitebotixOsuMultiMatches.findOne({
-				attributes: ['matchId', 'matchName', 'matchStartDate'],
+				attributes: ['matchId', 'matchName', 'matchStartDate', 'updatedAt'],
 				where: {
 					tourneyMatch: true,
 					verifiedAt: null,
@@ -428,6 +428,8 @@ module.exports = {
 			});
 
 			if (matchToVerify) {
+				verificationMatchAge.set((new Date() - new Date(matchToVerify.updatedAt)) / 1000);
+
 				if (logVerificationProcess) {
 					// eslint-disable-next-line no-console
 					console.log(`Verifying match ${matchToVerify.matchId} that already has a referee`);

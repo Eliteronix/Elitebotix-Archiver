@@ -42,6 +42,12 @@ const verifyMatchesCount = new client.Gauge({
 });
 register.registerMetric(verifyMatchesCount);
 
+const verificationMatchAge = new client.Gauge({
+	name: 'verification_match_age',
+	help: 'Age of the match being verified in seconds since last update',
+});
+register.registerMetric(verificationMatchAge);
+
 const refereeMatchesCount = new client.Gauge({
 	name: 'referee_matches_count',
 	help: 'Referee matches count',
@@ -93,4 +99,5 @@ module.exports = {
 	multiGamesAccesses,
 	multiMatchesAccesses,
 	totalErrorCount,
+	verificationMatchAge,
 };
