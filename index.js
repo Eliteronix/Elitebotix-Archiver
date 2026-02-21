@@ -23,9 +23,15 @@ const server = http.createServer(async (req, res) => {
 	const route = url.parse(req.url).pathname;
 
 	if (route === '/metrics') {
-		// Return all metrics the Prometheus exposition format
-		res.setHeader('Content-Type', register.contentType);
-		res.end(await register.metrics());
+		try {
+			// Return all metrics the Prometheus exposition format
+			res.setHeader('Content-Type', register.contentType);
+			res.end(await register.metrics());
+		} catch (e) {
+			console.error('index.js | /metrics', e);
+			res.statusCode = 500;
+			res.end('Internal Server Error');
+		}
 	}
 });
 
