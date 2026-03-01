@@ -7,6 +7,7 @@ const { timeBehindMatchCreation, osuApiRequests, osuWebRequests } = require('./m
 
 module.exports = {
 	async scrape() {
+		console.log('Starting scrape for new matches...'); // eslint-disable-line no-console
 		const fs = require('fs');
 
 		//Check if the lastImport.json file exists

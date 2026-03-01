@@ -7,6 +7,7 @@ const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount, osuAp
 
 module.exports = {
 	async processIncompleteScores() {
+		console.log('Starting processing for incomplete scores...'); // eslint-disable-line no-console
 
 		let incompleteGameScoreCountMetric = await DBElitebotixOsuMultiGames.count({
 			where: {
