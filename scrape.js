@@ -7,7 +7,7 @@ const { timeBehindMatchCreation, osuApiRequests, osuWebRequests } = require('./m
 
 module.exports = {
 	async scrape() {
-		console.log('Starting scrape for new matches...'); // eslint-disable-line no-console
+		console.log('Starting scrape for new matches...');
 		const fs = require('fs');
 
 		//Check if the lastImport.json file exists
@@ -43,6 +43,8 @@ module.exports = {
 			fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 		}
 
+		console.log('Starting to scrape matches from matchId:', JSON.parse(fs.readFileSync('./lastImport.json', 'utf-8')).matchId);
+
 		if (process.env.SERVER === 'Dev') {
 			return await processIncompleteScores();
 		}
@@ -58,6 +60,8 @@ module.exports = {
 			completeScores: false, // When fetching scores also fetch the beatmap they are for (Allows getting accuracy) (default: false)
 			parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 		});
+
+		console.log('Using API token index:', parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length);
 
 		osuApiRequests.inc();
 		await osuApi.getMatch({ mp: lastImport.matchId })

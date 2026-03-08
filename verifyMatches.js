@@ -7,8 +7,6 @@ const { osuApiRequests, osuWebRequests, verificationMatchAge } = require('./metr
 
 module.exports = {
 	async verifyMatches() {
-		console.log('Starting verification process for matches...'); // eslint-disable-line no-console
-
 		// Check for matchmaking first
 		for (let i = 0; i < matchmaking.length; i++) {
 			let verifyMatch = await DBElitebotixOsuMultiMatches.findOne({
