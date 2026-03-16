@@ -43,8 +43,6 @@ module.exports = {
 			fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 		}
 
-		console.log('Starting to scrape matches from matchId:', JSON.parse(fs.readFileSync('./lastImport.json', 'utf-8')).matchId);
-
 		if (process.env.SERVER === 'Dev') {
 			return await processIncompleteScores();
 		}
@@ -77,7 +75,9 @@ module.exports = {
 				fiveMinutesAgo.setUTCMinutes(fiveMinutesAgo.getUTCMinutes() - 5);
 				if (match.raw_end || Date.parse(match.raw_start) < sixHoursAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
+						console.log('Match ended or started over 6 hours ago, saving scores and importing match:', match.name);
 						await saveOsuMultiScores(match);
+						console.log('Match saved, adding import task to queue for match:', match.name);
 						let now = new Date();
 						let minutesBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60) % 60;
 						let hoursBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60 / 60) % 24;
@@ -90,6 +90,7 @@ module.exports = {
 							priority: 1,
 							date: new Date()
 						});
+						console.log('Import task added to queue for match:', match.name);
 					}
 
 					//Go next if match found and ended / too long going already
@@ -97,13 +98,16 @@ module.exports = {
 
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
+					console.log('Match ended or started over 6 hours ago, going next match:', lastImport.matchId);
 					return;
 				} else if (Date.parse(match.raw_start) < fiveMinutesAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
+						console.log('Match started over 5 minutes ago, saving scores and importing match:', match.name);
 						await saveOsuMultiScores(match);
 						let date = new Date();
 						date.setUTCMinutes(date.getUTCMinutes() + 5);
 
+						console.log('Match saved, adding import task to queue for match:', match.name, 'with execution time of:', date);
 						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'importMatch',
@@ -111,6 +115,7 @@ module.exports = {
 							priority: 1,
 							date: date
 						});
+						console.log('Import task added to queue for match:', match.name, 'with execution time of:', date);
 
 						await DBElitebotixProcessQueue.create({
 							guildId: 'none',
@@ -118,6 +123,7 @@ module.exports = {
 							date: new Date(),
 							priority: 0
 						});
+						console.log('Update current matches task added to queue for match:', match.name);
 					}
 
 					//Go next if match found and ended / too long going already
@@ -125,9 +131,11 @@ module.exports = {
 
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
+					console.log('Match started over 5 minutes ago, going next match:', lastImport.matchId);
 					return;
 				}
 
+				console.log('Match found but not ended, checking for incomplete scores and saving match if needed:', match.name);
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
@@ -142,8 +150,10 @@ module.exports = {
 						lastImport.matchId = lastImport.matchId + 1;
 					}
 
+					console.log('Match not found, going next match:', lastImport.matchId);
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
+					console.log('Match not found, going next match; written into JSON:', lastImport.matchId);
 					return;
 				} else {
 					try {
@@ -159,7 +169,9 @@ module.exports = {
 							lastImport.matchId = lastImport.matchId + 1;
 
 							//Create the lastImport.json file
+							console.log('Match over 24 hours long, going next match:', lastImport.matchId);
 							fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
+							console.log('Match over 24 hours long, going next match; written into JSON:', lastImport.matchId);
 							return;
 						} else {
 							return;
