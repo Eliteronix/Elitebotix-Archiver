@@ -64,6 +64,7 @@ module.exports = {
 		osuApiRequests.inc();
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
+				console.log('Match found:', match.name, 'with ID:', match.id);
 				lastImport.lastMatchFound = lastImport.matchId;
 
 				timeBehindMatchCreation.set(Math.floor((Date.now() - Date.parse(match.raw_start)) / 1000));
@@ -77,7 +78,7 @@ module.exports = {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
 						console.log('Match ended or started over 6 hours ago, saving scores and importing match:', match.name);
 						await saveOsuMultiScores(match);
-						console.log('Match saved, adding import task to queue for match:', match.name);
+						// console.log('Match saved, adding import task to queue for match:', match.name);
 						let now = new Date();
 						let minutesBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60) % 60;
 						let hoursBehindToday = parseInt((now.getTime() - Date.parse(match.raw_start)) / 1000 / 60 / 60) % 24;
@@ -90,7 +91,7 @@ module.exports = {
 							priority: 1,
 							date: new Date()
 						});
-						console.log('Import task added to queue for match:', match.name);
+						// console.log('Import task added to queue for match:', match.name);
 					}
 
 					//Go next if match found and ended / too long going already
@@ -107,7 +108,7 @@ module.exports = {
 						let date = new Date();
 						date.setUTCMinutes(date.getUTCMinutes() + 5);
 
-						console.log('Match saved, adding import task to queue for match:', match.name, 'with execution time of:', date);
+						// console.log('Match saved, adding import task to queue for match:', match.name, 'with execution time of:', date);
 						await DBElitebotixProcessQueue.create({
 							guildId: 'None',
 							task: 'importMatch',
@@ -115,7 +116,7 @@ module.exports = {
 							priority: 1,
 							date: date
 						});
-						console.log('Import task added to queue for match:', match.name, 'with execution time of:', date);
+						// console.log('Import task added to queue for match:', match.name, 'with execution time of:', date);
 
 						await DBElitebotixProcessQueue.create({
 							guildId: 'none',
@@ -123,7 +124,7 @@ module.exports = {
 							date: new Date(),
 							priority: 0
 						});
-						console.log('Update current matches task added to queue for match:', match.name);
+						// console.log('Update current matches task added to queue for match:', match.name);
 					}
 
 					//Go next if match found and ended / too long going already
@@ -153,9 +154,10 @@ module.exports = {
 					console.log('Match not found, going next match:', lastImport.matchId);
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
-					console.log('Match not found, going next match; written into JSON:', lastImport.matchId);
+					// console.log('Match not found, going next match; written into JSON:', lastImport.matchId);
 					return;
 				} else {
+					console.log('Error fetching match, trying to check if match is over 24 hours long or if there is an API issue:', err.message, `for match ID: ${lastImport.matchId}`);
 					try {
 						// Check using node fetch
 						//const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
@@ -169,9 +171,9 @@ module.exports = {
 							lastImport.matchId = lastImport.matchId + 1;
 
 							//Create the lastImport.json file
-							console.log('Match over 24 hours long, going next match:', lastImport.matchId);
+							// console.log('Match over 24 hours long, going next match:', lastImport.matchId);
 							fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
-							console.log('Match over 24 hours long, going next match; written into JSON:', lastImport.matchId);
+							// console.log('Match over 24 hours long, going next match; written into JSON:', lastImport.matchId);
 							return;
 						} else {
 							return;
