@@ -62,6 +62,7 @@ module.exports = {
 		console.log('Using API token index:', parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length);
 
 		osuApiRequests.inc();
+		console.log('Fetching match with ID:', lastImport.matchId);
 		await osuApi.getMatch({ mp: lastImport.matchId })
 			.then(async (match) => {
 				console.log('Match found:', match.name, 'with ID:', match.id);
@@ -140,6 +141,7 @@ module.exports = {
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
+				console.log('Error fetching match:', err.message, `for match ID: ${lastImport.matchId}`);
 				if (err.message === 'Not found') {
 					//Fallback in case we got ahead of the matches
 					if (lastImport.lastMatchFound < lastImport.matchId - 100) {
