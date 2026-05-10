@@ -77,7 +77,7 @@ module.exports = {
 				fiveMinutesAgo.setUTCMinutes(fiveMinutesAgo.getUTCMinutes() - 5);
 				if (match.raw_end || Date.parse(match.raw_start) < sixHoursAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
-						console.log('Match ended or started over 6 hours ago, saving scores and importing match:', match.name);
+						// console.log('Match ended or started over 6 hours ago, saving scores and importing match:', match.name);
 						await saveOsuMultiScores(match);
 						// console.log('Match saved, adding import task to queue for match:', match.name);
 						let now = new Date();
@@ -100,11 +100,11 @@ module.exports = {
 
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
-					console.log('Match ended or started over 6 hours ago, going next match:', lastImport.matchId);
+					// console.log('Match ended or started over 6 hours ago, going next match:', lastImport.matchId);
 					return;
 				} else if (Date.parse(match.raw_start) < fiveMinutesAgo) {
 					if (match.name.toLowerCase().match(/.+:.+vs.+/g)) {
-						console.log('Match started over 5 minutes ago, saving scores and importing match:', match.name);
+						// console.log('Match started over 5 minutes ago, saving scores and importing match:', match.name);
 						await saveOsuMultiScores(match);
 						let date = new Date();
 						date.setUTCMinutes(date.getUTCMinutes() + 5);
@@ -133,11 +133,11 @@ module.exports = {
 
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
-					console.log('Match started over 5 minutes ago, going next match:', lastImport.matchId);
+					// console.log('Match started over 5 minutes ago, going next match:', lastImport.matchId);
 					return;
 				}
 
-				console.log('Match found but not ended, checking for incomplete scores and saving match if needed:', match.name);
+				// console.log('Match found but not ended, checking for incomplete scores and saving match if needed:', match.name);
 				return await processIncompleteScores();
 			})
 			.catch(async (err) => {
