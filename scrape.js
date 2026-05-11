@@ -7,7 +7,7 @@ const { timeBehindMatchCreation, osuApiRequests, osuWebRequests } = require('./m
 
 module.exports = {
 	async scrape() {
-		console.log('Starting scrape for new matches...');
+		// console.log('Starting scrape for new matches...');
 		const fs = require('fs');
 
 		//Check if the lastImport.json file exists
@@ -59,7 +59,7 @@ module.exports = {
 			parseNumeric: false // Parse numeric values into numbers/floats, excluding ids
 		});
 
-		console.log('Using API token index:', parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length);
+		// console.log('Using API token index:', parseInt(lastImport.matchId) % process.env.OSUTOKENSV1.split('-').length);
 
 		osuApiRequests.inc();
 		console.log('Fetching match with ID:', lastImport.matchId);
@@ -153,13 +153,13 @@ module.exports = {
 						lastImport.matchId = lastImport.matchId + 1;
 					}
 
-					console.log('Match not found, going next match:', lastImport.matchId);
+					// console.log('Match not found, going next match:', lastImport.matchId);
 					//Create the lastImport.json file
 					fs.writeFileSync('./lastImport.json', JSON.stringify(lastImport, null, 2), 'utf-8');
 					// console.log('Match not found, going next match; written into JSON:', lastImport.matchId);
 					return;
 				} else {
-					console.log('Error fetching match, trying to check if match is over 24 hours long or if there is an API issue:', err.message, `for match ID: ${lastImport.matchId}`);
+					// console.log('Error fetching match, trying to check if match is over 24 hours long or if there is an API issue:', err.message, `for match ID: ${lastImport.matchId}`);
 					try {
 						// Check using node fetch
 						//const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
