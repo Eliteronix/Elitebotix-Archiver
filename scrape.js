@@ -64,7 +64,7 @@ module.exports = {
 		osuApiRequests.inc();
 		// console.log('Fetching match with ID:', lastImport.matchId);
 		await Promise.race([
-			new Promise(resolve => setTimeout(() => resolve('timeout'), 10000)),
+			new Promise(resolve => setTimeout(() => resolve('timeout'), 5 * 60 * 1000)),
 			osuApi.getMatch({ mp: lastImport.matchId })
 				.then(async (match) => {
 					// console.log('Match found:', match.name, 'with ID:', match.id);
