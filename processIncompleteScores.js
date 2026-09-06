@@ -3,6 +3,7 @@ const osu = require('node-osu');
 const { saveOsuMultiScores } = require(`${process.env.ELITEBOTIXROOTPATH}/utils`);
 const { verifyMatches } = require('./verifyMatches');
 const { Op } = require('sequelize');
+const sequelize = require('sequelize');
 const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount, osuApiRequests } = require('./metrics.js');
 
 module.exports = {
@@ -41,13 +42,13 @@ module.exports = {
 		refereeMatchesCount.set(refereeMatchesCountMetric);
 
 		let incompleteMatchScore = await DBElitebotixOsuMultiGames.findOne({
-			attributes: ['id', 'matchId', 'updatedAt'],
+			attributes: ['id', 'matchId', [sequelize.col('updatedat'), 'updatedAt']],
 			where: {
 				tourneyMatch: true,
 				warmup: null
 			},
 			order: [
-				['updatedAt', 'ASC']
+				['updatedat', 'ASC']
 			]
 		});
 
@@ -79,14 +80,14 @@ module.exports = {
 				})
 				.catch(async (err) => {
 					let incompleteGames = await DBElitebotixOsuMultiGames.findAll({
-						attributes: ['id', 'warmup', 'updatedAt'],
+						attributes: ['id', 'warmup', [sequelize.col('updatedat'), 'updatedAt']],
 						where: {
 							matchId: incompleteMatchScore.matchId
 						}
 					});
 
 					let incompleteScores = await DBElitebotixOsuMultiGameScores.findAll({
-						attributes: ['id', 'maxCombo', 'pp', 'updatedAt'],
+						attributes: ['id', 'maxCombo', 'pp', [sequelize.col('updatedat'), 'updatedAt']],
 						where: {
 							matchId: incompleteMatchScore.matchId
 						}
