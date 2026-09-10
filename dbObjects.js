@@ -9,7 +9,6 @@ const elitebotixPostgres = new Sequelize('elitebotix', 'elitebotix', process.env
 	host: 'localhost',
 	port: 5432,
 	logging: async (msg) => {
-		console.log(`[SQL]: ${msg}`);
 		if (process.shardId !== undefined) {
 			process.send('DB postgres');
 		}
