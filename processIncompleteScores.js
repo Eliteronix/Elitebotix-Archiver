@@ -8,15 +8,13 @@ const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount, osuAp
 
 module.exports = {
 	async processIncompleteScores() {
-		console.log('Starting processing of incomplete scores...');
+		// console.log('Starting processing of incomplete scores...');
 		let incompleteGameScoreCountMetric = await DBElitebotixOsuMultiGames.count({
 			where: {
 				tourneyMatch: true,
 				warmup: null,
 			}
 		});
-
-		console.log(`Found ${incompleteGameScoreCountMetric} incomplete game score(s) to process.`);
 
 		incompleteGameScoreCount.set(incompleteGameScoreCountMetric);
 
@@ -30,8 +28,6 @@ module.exports = {
 			},
 		});
 
-		console.log(`Found ${verifyMatchesCountMetric} match(es) to verify.`);
-
 		verifyMatchesCount.set(verifyMatchesCountMetric);
 
 		let refereeMatchesCountMetric = await DBElitebotixOsuMultiMatches.count({
@@ -43,8 +39,6 @@ module.exports = {
 				},
 			},
 		});
-
-		console.log(`Found ${refereeMatchesCountMetric} match(es) without a referee.`);
 
 		refereeMatchesCount.set(refereeMatchesCountMetric);
 
@@ -59,7 +53,7 @@ module.exports = {
 			]
 		});
 
-		console.log(`Found ${incompleteMatchScore ? 1 : 0} incomplete match score(s) to process.`);
+		// console.log(`Found ${incompleteMatchScore ? 1 : 0} incomplete match score(s) to process.`);
 
 		if (incompleteMatchScore) {
 			console.log(`Processing incomplete match score for match ID: ${incompleteMatchScore.matchId}...`);
