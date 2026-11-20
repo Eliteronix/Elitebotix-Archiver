@@ -16,6 +16,8 @@ module.exports = {
 			}
 		});
 
+		console.log(`Found ${incompleteGameScoreCountMetric} incomplete game score(s) to process.`);
+
 		incompleteGameScoreCount.set(incompleteGameScoreCountMetric);
 
 		let verifyMatchesCountMetric = await DBElitebotixOsuMultiMatches.count({
@@ -28,6 +30,8 @@ module.exports = {
 			},
 		});
 
+		console.log(`Found ${verifyMatchesCountMetric} match(es) to verify.`);
+
 		verifyMatchesCount.set(verifyMatchesCountMetric);
 
 		let refereeMatchesCountMetric = await DBElitebotixOsuMultiMatches.count({
@@ -39,6 +43,8 @@ module.exports = {
 				},
 			},
 		});
+
+		console.log(`Found ${refereeMatchesCountMetric} match(es) without a referee.`);
 
 		refereeMatchesCount.set(refereeMatchesCountMetric);
 
@@ -53,7 +59,10 @@ module.exports = {
 			]
 		});
 
+		console.log(`Found ${incompleteMatchScore ? 1 : 0} incomplete match score(s) to process.`);
+
 		if (incompleteMatchScore) {
+			console.log(`Processing incomplete match score for match ID: ${incompleteMatchScore.matchId}...`);
 			let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(incompleteMatchScore.matchId) % process.env.OSUTOKENSV1.split('-').length];
 
 			const osuApi = new osu.Api(APItoken, {
