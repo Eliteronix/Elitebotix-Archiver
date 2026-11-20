@@ -8,6 +8,7 @@ const { incompleteGameScoreCount, verifyMatchesCount, refereeMatchesCount, osuAp
 
 module.exports = {
 	async processIncompleteScores() {
+		console.log('Starting processing of incomplete scores...');
 		let incompleteGameScoreCountMetric = await DBElitebotixOsuMultiGames.count({
 			where: {
 				tourneyMatch: true,
