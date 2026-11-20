@@ -56,7 +56,6 @@ module.exports = {
 		// console.log(`Found ${incompleteMatchScore ? 1 : 0} incomplete match score(s) to process.`);
 
 		if (incompleteMatchScore) {
-			console.log(`Processing incomplete match score for match ID: ${incompleteMatchScore.matchId}...`);
 			let APItoken = process.env.OSUTOKENSV1.split('-')[parseInt(incompleteMatchScore.matchId) % process.env.OSUTOKENSV1.split('-').length];
 
 			const osuApi = new osu.Api(APItoken, {
@@ -69,7 +68,6 @@ module.exports = {
 			osuApiRequests.inc();
 			await osuApi.getMatch({ mp: incompleteMatchScore.matchId })
 				.then(async (match) => {
-					console.log(incompleteMatchScore);
 					await DBElitebotixProcessQueue.create({
 						guildId: 'None',
 						task: 'messageChannel',
