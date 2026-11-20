@@ -73,7 +73,7 @@ module.exports = {
 					await DBElitebotixProcessQueue.create({
 						guildId: 'None',
 						task: 'messageChannel',
-						additions: `${process.env.REIMPORTMATCHLOG};<https://osu.ppy.sh/mp/${match.id}> | ${incompleteMatchScore.updatedAt.getUTCHours().toString().padStart(2, 0)}:${incompleteMatchScore.updatedAt.getUTCMinutes().toString().padStart(2, 0)} ${incompleteMatchScore.updatedAt.getUTCDate().toString().padStart(2, 0)}.${(incompleteMatchScore.updatedAt.getUTCMonth() + 1).toString().padStart(2, 0)}.${incompleteMatchScore.updatedAt.getUTCFullYear()} | \`${match.name}\``,
+						additions: `${process.env.REIMPORTMATCHLOG};<https://osu.ppy.sh/mp/${match.id}> | ${incompleteMatchScore.dataValues.updatedAt.getUTCHours().toString().padStart(2, 0)}:${incompleteMatchScore.dataValues.updatedAt.getUTCMinutes().toString().padStart(2, 0)} ${incompleteMatchScore.dataValues.updatedAt.getUTCDate().toString().padStart(2, 0)}.${(incompleteMatchScore.dataValues.updatedAt.getUTCMonth() + 1).toString().padStart(2, 0)}.${incompleteMatchScore.dataValues.updatedAt.getUTCFullYear()} | \`${match.name}\``,
 						priority: 1,
 						date: new Date()
 					});
