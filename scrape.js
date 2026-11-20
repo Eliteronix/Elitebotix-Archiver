@@ -16,7 +16,7 @@ module.exports = {
 			let recentImport = await DBElitebotixOsuMultiMatches.findOne({
 				attributes: ['matchId'],
 				where: {
-					createdAt: {
+					createdat: {
 						[Op.lt]: new Date(Date.now() - 24 * 60 * 60 * 1000),
 					},
 				},

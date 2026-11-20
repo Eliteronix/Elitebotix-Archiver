@@ -414,7 +414,7 @@ module.exports = {
 			}
 
 			matchToVerify = await DBElitebotixOsuMultiMatches.findOne({
-				attributes: ['matchId', 'matchName', 'matchStartDate', 'updatedAt'],
+				attributes: ['matchId', 'matchName', 'matchStartDate', [sequelize.col('updatedat'), 'updatedAt']],
 				where: {
 					tourneyMatch: true,
 					verifiedAt: null,
@@ -423,7 +423,7 @@ module.exports = {
 					},
 				},
 				order: [
-					['updatedAt', 'ASC']
+					['updatedat', 'ASC']
 				]
 			});
 
