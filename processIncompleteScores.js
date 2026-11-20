@@ -89,6 +89,7 @@ module.exports = {
 					await saveOsuMultiScores(match);
 				})
 				.catch(async (err) => {
+					console.error(`Error fetching match ID ${incompleteMatchScore.matchId}:`, err.message);
 					let incompleteGames = await DBElitebotixOsuMultiGames.findAll({
 						attributes: ['id', 'warmup', [sequelize.col('updatedat'), 'updatedAt']],
 						where: {
